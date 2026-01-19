@@ -132,16 +132,31 @@ const App: React.FC = () => {
             </p>
           </div>
           <div className="flex items-center gap-4">
-            <a 
-              href={activeToolId === ToolType.NORMAL_CURVE ? '/3030-dashboard/' : activeTool.url}
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm shadow-sm"
-              title="Open in full screen"
-            >
-              <ExternalLink size={16} />
-              Full Screen
-            </a>
+            {activeToolId === ToolType.NORMAL_CURVE ? (
+              <button
+                onClick={() => {
+                  if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen();
+                  }
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm shadow-sm"
+                title="Enter fullscreen mode"
+              >
+                <ExternalLink size={16} />
+                Full Screen
+              </button>
+            ) : (
+              <a 
+                href={activeTool.url}
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm shadow-sm"
+                title="Open in full screen"
+              >
+                <ExternalLink size={16} />
+                Full Screen
+              </a>
+            )}
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors"

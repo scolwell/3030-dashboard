@@ -133,7 +133,7 @@ const App: React.FC = () => {
           </div>
           <div className="flex items-center gap-4">
             <a 
-              href={activeToolId === ToolType.NORMAL_CURVE ? window.location.href : activeTool.url}
+              href={activeToolId === ToolType.NORMAL_CURVE ? '/3030-dashboard/' : activeTool.url}
               target="_blank" 
               rel="noopener noreferrer" 
               className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm shadow-sm"

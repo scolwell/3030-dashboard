@@ -8,10 +8,12 @@ import {
   Target, 
   Info,
   ExternalLink,
-  Sparkles
+  Sparkles,
+  Coins
 } from 'lucide-react';
 import { ToolType } from './types';
 import NormalCurveTool from './components/NormalCurveTool';
+import CoinTossSimulation from './components/CoinTossSimulation';
 
 interface Tool {
   id: ToolType;
@@ -22,6 +24,8 @@ interface Tool {
 }
 
 const App: React.FC = () => {
+  const APP_VERSION = '1.0.0';
+  const BUILD_NUMBER = '20260121.1';
   const [activeToolId, setActiveToolId] = useState<ToolType>(ToolType.NORMAL_CURVE);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -61,6 +65,13 @@ const App: React.FC = () => {
       icon: Sparkles, 
       desc: 'Simulate the Galton board to visualize the Central Limit Theorem.',
       url: 'https://thestatisticalmind.com/galton-demo/'
+    },
+    { 
+      id: ToolType.COIN_TOSS, 
+      name: 'Probability: Coin Toss', 
+      icon: Coins, 
+      desc: 'Simulate coin flips to explore probability.',
+      url: '#' 
     },
   ];
 
@@ -112,10 +123,19 @@ const App: React.FC = () => {
         </nav>
 
         <div className="p-4 border-t border-slate-100">
-           <div className={`flex items-center gap-3 p-3 rounded-xl text-slate-500`}>
+          <div className="p-3 rounded-xl text-slate-500 flex flex-col gap-2">
+            <div className="flex items-center gap-3">
               <Info size={20} />
               {isSidebarOpen && <span className="text-sm font-medium">MCS*3030 Dashboard</span>}
-           </div>
+            </div>
+            {isSidebarOpen && (
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <span className="font-semibold">v{APP_VERSION}</span>
+                <span className="text-slate-400">·</span>
+                <span className="font-semibold">build {BUILD_NUMBER}</span>
+              </div>
+            )}
+          </div>
         </div>
       </aside>
 
@@ -146,6 +166,8 @@ const App: React.FC = () => {
         <div className="flex-1 w-full bg-slate-100 relative overflow-auto p-6">
           {activeToolId === ToolType.NORMAL_CURVE ? (
             <NormalCurveTool />
+          ) : activeToolId === ToolType.COIN_TOSS ? (
+            <CoinTossSimulation />
           ) : (
             <iframe 
               ref={iframeRef}

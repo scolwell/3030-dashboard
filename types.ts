@@ -4,7 +4,9 @@ export enum ToolType {
   SAMPLE_SIZE = 'sample-size',
   POWER_EFFECT = 'power-effect',
   ERRORS_POWER = 'errors-power',
-  GALTON_BOARD = 'galton-board'
+  GALTON_BOARD = 'galton-board',
+  COIN_TOSS = 'coin-toss',
+
 }
 
 export interface StatsParams {

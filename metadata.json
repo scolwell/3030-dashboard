@@ -1,5 +1,7 @@
 {
   "name": "The Statistical Mind - MCS*3030 Dashboard",
   "description": "A comprehensive statistical demonstration and calculation suite for Research Methods and Statistics students, featuring normal curve analysis, sample size calculators, and interactive simulations.",
+  "version": "1.0.0",
+  "build": "20260121.1",
   "requestFramePermissions": []
 }

@@ -1,781 +1,681 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { 
-  Check, 
-  ChevronRight,
-  Copy, 
-  CheckCircle2, 
-  AlertCircle,
-  Lightbulb,
-  RefreshCw,
-  Eye
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 
-// ============================================================================
-// MATH UTILITIES
-// ============================================================================
-
-function erf(x: number): number {
-  const sign = x >= 0 ? 1 : -1;
-  x = Math.abs(x);
-  const a1 = 0.254829592;
-  const a2 = -0.284496736;
-  const a3 = 1.421413741;
-  const a4 = -1.453152027;
-  const a5 = 1.061405429;
-  const p = 0.3275911;
-  const t = 1.0 / (1.0 + p * x);
-  const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
-  return sign * y;
-}
-
-function normalCDF(z: number): number {
-  return 0.5 * (1 + erf(z / Math.sqrt(2)));
-}
-
-function normalPDF(z: number): number {
-  return (1 / Math.sqrt(2 * Math.PI)) * Math.exp(-0.5 * z * z);
-}
-
-const CRITICAL_VALUES: { [key: string]: number } = {
-  'one-0.10': 1.2816,
-  'one-0.05': 1.6449,
-  'one-0.01': 2.3263,
-  'two-0.10': 1.6449,
-  'two-0.05': 1.9600,
-  'two-0.01': 2.5758,
-};
-
-// ============================================================================
-// TYPES
-// ============================================================================
-
-type TailType = 'two' | 'left' | 'right';
-type AlphaValue = 0.01 | 0.05 | 0.10;
-type StepId = 1 | 2 | 3 | 4 | 5 | 6;
+type TailType = 'right' | 'left' | 'two';
 
 interface Scenario {
-  name: string;
+  text: string;
   mu0: number;
-  sigma: number;
-  n: number;
   xbar: number;
-  tail: TailType;
-  alpha: AlphaValue;
-  description: string;
+  s: number;
+  n: number;
+  unit: string;
+  defaultTail: TailType;
 }
 
-interface ChallengeType {
-  type: 'significant' | 'hide' | 'alpha-trade';
-  description: string;
-  targetDecision: 'reject' | 'fail-to-reject';
-  mu0: number;
-  sigma: number;
-  muTrue?: number;
-  fixedN?: number;
-  fixedXbar?: number;
-  fixedAlpha?: AlphaValue;
-  fixedTail?: TailType;
-  constraints: {
-    nMin?: number;
-    nMax?: number;
-    xbarMin?: number;
-    xbarMax?: number;
-    allowAlphaChange?: boolean;
-    allowTailChange?: boolean;
-  };
-}
-
-// ============================================================================
-// SCENARIOS
-// ============================================================================
-
-const SCENARIOS: Scenario[] = [
-  {
-    name: 'Repeat Purchase Amount',
+const scenarios: Record<string, Scenario> = {
+  loyalty: {
+    text: "You're a consumer behavior analyst testing whether a new loyalty program increases repeat purchase amounts. Historical data shows customers spend an average of $85/month. After the loyalty program, you sampled 56 customers and found they spend $91/month on average.",
     mu0: 85,
-    sigma: 18,
-    n: 56,
     xbar: 91,
-    tail: 'right',
-    alpha: 0.05,
-    description: 'Testing if a loyalty program increases repeat purchase amount ($).'
+    s: 15,
+    n: 56,
+    unit: "$",
+    defaultTail: "two"
   },
-  {
-    name: 'Ad Recall Score',
-    mu0: 70,
-    sigma: 10,
-    n: 49,
-    xbar: 67,
-    tail: 'left',
-    alpha: 0.05,
-    description: 'Does the presence of rival banner ads lower brand recall %?'
+  training: {
+    text: "You're evaluating whether a new training program improves employee productivity. Before training, employees completed an average of 50 tasks/week. After training 40 employees, you measured an average of 52 tasks/week.",
+    mu0: 50,
+    xbar: 52,
+    s: 8,
+    n: 40,
+    unit: "",
+    defaultTail: "two"
   },
-  {
-    name: 'Decision Time Under Pressure',
-    mu0: 30,
-    sigma: 6,
-    n: 36,
-    xbar: 28.2,
-    tail: 'left',
-    alpha: 0.05,
-    description: 'Assessing if training reduces managers\' decision time in crises.'
+  marketing: {
+    text: "You're testing whether a redesigned email campaign differs from the current 12% click rate. After sending to 200 subscribers, you observed a 15% click rate.",
+    mu0: 0.12,
+    xbar: 0.15,
+    s: 0.08,
+    n: 200,
+    unit: "",
+    defaultTail: "two"
   },
-  {
-    name: 'Working Memory Span',
-    mu0: 7.0,
-    sigma: 1.2,
-    n: 81,
-    xbar: 6.6,
-    tail: 'two',
-    alpha: 0.01,
-    description: 'Testing how sleep deprivation changes working memory span.'
+  quality: {
+    text: "You're checking if a new manufacturing process reduces defect rate below the current 3.5%. Testing 100 units showed a 3.3% defect rate.",
+    mu0: 3.5,
+    xbar: 3.3,
+    s: 1.2,
+    n: 100,
+    unit: "%",
+    defaultTail: "two"
   },
-];
+  delivery: {
+    text: "You're testing whether a new routing system decreases delivery time from the current 45 minutes. Testing 75 deliveries showed an average of 42 minutes.",
+    mu0: 45,
+    xbar: 42,
+    s: 6,
+    n: 75,
+    unit: " mins",
+    defaultTail: "two"
+  },
+  sports: {
+    text: "You're a sports marketing analyst testing if a social media campaign increased game attendance from the historical average of 18,500 fans. After sampling 30 games, you found an average attendance of 19,200 fans.",
+    mu0: 18500,
+    xbar: 19200,
+    s: 1500,
+    n: 30,
+    unit: " fans",
+    defaultTail: "two"
+  },
+  concert: {
+    text: "You're testing whether dynamic pricing differs from the standard $85 ticket price. After analyzing 50 events, you observed an average ticket price of $88.",
+    mu0: 85,
+    xbar: 88,
+    s: 12,
+    n: 50,
+    unit: "$",
+    defaultTail: "two"
+  },
+  cloud: {
+    text: "You're a cloud service engineer testing if server optimization reduced response time from the current 250ms. Testing 100 requests showed an average response time of 235ms.",
+    mu0: 250,
+    xbar: 235,
+    s: 20,
+    n: 100,
+    unit: "ms",
+    defaultTail: "two"
+  },
+  gaming: {
+    text: "You're analyzing whether a marketing campaign increased daily active users from the baseline of 2.4 million. After tracking 45 days, you measured an average of 2.65 million daily active users.",
+    mu0: 2.4,
+    xbar: 2.65,
+    s: 0.3,
+    n: 45,
+    unit: " M",
+    defaultTail: "two"
+  },
+  charity: {
+    text: "You're testing whether an awareness campaign increased food donations from the historical average of 450 lbs per event. After sampling 25 events, you found an average of 520 lbs donated.",
+    mu0: 450,
+    xbar: 520,
+    s: 80,
+    n: 25,
+    unit: " lbs",
+    defaultTail: "two"
+  }
+};
 
-// ============================================================================
-// MAIN COMPONENT
-// ============================================================================
+const criticalValues: Record<TailType, Record<number, number>> = {
+  'right': { 0.10: 1.299, 0.05: 1.673, 0.01: 2.396 },
+  'left': { 0.10: -1.299, 0.05: -1.673, 0.01: -2.396 },
+  'two': { 0.10: 1.984, 0.05: 2.004, 0.01: 2.660 }
+};
 
 const HypothesisTestTool: React.FC = () => {
-  const [scenario, setScenario] = useState<string>('Repeat Purchase Amount');
-  const [mu0, setMu0] = useState<number>(85);
-  const [sigma, setSigma] = useState<number>(18);
-  const [n, setN] = useState<number>(56);
-  const [xbar, setXbar] = useState<number>(91);
-  const [tail, setTail] = useState<TailType>('right');
-  const [alpha, setAlpha] = useState<AlphaValue>(0.05);
-  const [currentStep, setCurrentStep] = useState<StepId>(1);
-  const [completedSteps, setCompletedSteps] = useState<Set<StepId>>(new Set());
-  const [copied, setCopied] = useState(false);
-  const [challengeActive, setChallengeActive] = useState(false);
-  const [currentChallenge, setCurrentChallenge] = useState<ChallengeType | null>(null);
-  const [challengeAttempted, setChallengeAttempted] = useState(false);
-  const [showHint, setShowHint] = useState(false);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [selectedScenario, setSelectedScenario] = useState<string>('loyalty');
+  const [tailType, setTailType] = useState<TailType>('right');
+  const [alpha, setAlpha] = useState<number>(0.05);
+  const [activeTab, setActiveTab] = useState<number>(1);
 
-  const errors = useMemo(() => {
-    const errs: string[] = [];
-    if (n < 2) errs.push('Sample size must be at least 2');
-    if (!Number.isInteger(n)) errs.push('Sample size must be an integer');
-    if (sigma <= 0) errs.push('Standard deviation must be positive');
-    return errs;
-  }, [n, sigma]);
-
-  const isValid = errors.length === 0;
-
-  const results = useMemo(() => {
-    if (!isValid) return null;
-    const se = sigma / Math.sqrt(n);
-    const z = (xbar - mu0) / se;
-    const critKey = tail === 'two' ? `two-${alpha}` : `one-${alpha}`;
-    const critZ = CRITICAL_VALUES[critKey];
-    let criticalLower: number | null = null;
-    let criticalUpper: number | null = null;
-    if (tail === 'two') { criticalLower = -critZ; criticalUpper = critZ; }
-    else if (tail === 'left') { criticalLower = -critZ; }
-    else { criticalUpper = critZ; }
-    let pValue: number;
-    if (tail === 'two') { pValue = 2 * (1 - normalCDF(Math.abs(z))); }
-    else if (tail === 'right') { pValue = 1 - normalCDF(z); }
-    else { pValue = normalCDF(z); }
-    let reject = false;
-    if (tail === 'two') { reject = Math.abs(z) > critZ; }
-    else if (tail === 'right') { reject = z > critZ; }
-    else { reject = z < -critZ; }
-    return { se, z, criticalLower, criticalUpper, pValue, reject };
-  }, [mu0, sigma, n, xbar, tail, alpha, isValid]);
+  const currentScenario = scenarios[selectedScenario];
 
   useEffect(() => {
-    const sc = SCENARIOS.find(s => s.name === scenario);
-    if (sc) {
-      setMu0(sc.mu0); setSigma(sc.sigma); setN(sc.n);
-      setXbar(sc.xbar); setTail(sc.tail); setAlpha(sc.alpha);
-    }
-  }, [scenario]);
+    setTailType(currentScenario.defaultTail);
+  }, [selectedScenario, currentScenario.defaultTail]);
 
-  useEffect(() => {
-    if (!canvasRef.current || !results) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const width = canvas.width; const height = canvas.height;
-    const padding = { top: 40, right: 40, bottom: 50, left: 60 };
-    ctx.clearRect(0, 0, width, height);
-    const chartWidth = width - padding.left - padding.right;
-    const chartHeight = height - padding.top - padding.bottom;
-    const zMin = -4; const zMax = 4; const zRange = zMax - zMin;
-    const yMax = normalPDF(0) * 1.1;
-    const xScale = (z: number) => padding.left + ((z - zMin) / zRange) * chartWidth;
-    const yScale = (y: number) => height - padding.bottom - (y / yMax) * chartHeight;
-    
-    // Draw axes
-    ctx.strokeStyle = '#E5E7EB'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(padding.left, yScale(0)); ctx.lineTo(width - padding.right, yScale(0)); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(padding.left, padding.top); ctx.lineTo(padding.left, height - padding.bottom); ctx.stroke();
-    
-    // X-axis labels
-    ctx.fillStyle = '#6B7280'; ctx.font = '12px Inter, sans-serif'; ctx.textAlign = 'center';
-    for (let z = -4; z <= 4; z++) {
-      const x = xScale(z);
-      ctx.fillText(z.toString(), x, height - padding.bottom + 20);
-    }
-    
-    // Rejection regions
-    const steps = 200;
-    ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
-    if (tail === 'two' && results.criticalLower && results.criticalUpper) {
-      ctx.beginPath(); ctx.moveTo(xScale(zMin), yScale(0));
-      for (let i = 0; i <= steps; i++) {
-        const z = zMin + (results.criticalLower - zMin) * (i / steps);
-        const y = normalPDF(z); ctx.lineTo(xScale(z), yScale(y));
-      }
-      ctx.lineTo(xScale(results.criticalLower), yScale(0)); ctx.closePath(); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(xScale(results.criticalUpper), yScale(0));
-      for (let i = 0; i <= steps; i++) {
-        const z = results.criticalUpper + (zMax - results.criticalUpper) * (i / steps);
-        const y = normalPDF(z); ctx.lineTo(xScale(z), yScale(y));
-      }
-      ctx.lineTo(xScale(zMax), yScale(0)); ctx.closePath(); ctx.fill();
-    } else if (tail === 'left' && results.criticalLower) {
-      ctx.beginPath(); ctx.moveTo(xScale(zMin), yScale(0));
-      for (let i = 0; i <= steps; i++) {
-        const z = zMin + (results.criticalLower - zMin) * (i / steps);
-        const y = normalPDF(z); ctx.lineTo(xScale(z), yScale(y));
-      }
-      ctx.lineTo(xScale(results.criticalLower), yScale(0)); ctx.closePath(); ctx.fill();
-    } else if (tail === 'right' && results.criticalUpper) {
-      ctx.beginPath(); ctx.moveTo(xScale(results.criticalUpper), yScale(0));
-      for (let i = 0; i <= steps; i++) {
-        const z = results.criticalUpper + (zMax - results.criticalUpper) * (i / steps);
-        const y = normalPDF(z); ctx.lineTo(xScale(z), yScale(y));
-      }
-      ctx.lineTo(xScale(zMax), yScale(0)); ctx.closePath(); ctx.fill();
-    }
-    
-    // Normal curve
-    ctx.strokeStyle = '#4F46E5'; ctx.lineWidth = 3; ctx.beginPath();
-    for (let i = 0; i <= steps; i++) {
-      const z = zMin + (zRange * i) / steps; const y = normalPDF(z);
-      const x = xScale(z); const yPos = yScale(y);
-      if (i === 0) { ctx.moveTo(x, yPos); } else { ctx.lineTo(x, yPos); }
-    }
-    ctx.stroke();
-    
-    // Critical value lines
-    if (results.criticalLower !== null) {
-      ctx.strokeStyle = '#EF4444'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
-      ctx.beginPath(); ctx.moveTo(xScale(results.criticalLower), padding.top);
-      ctx.lineTo(xScale(results.criticalLower), height - padding.bottom); ctx.stroke();
-    }
-    if (results.criticalUpper !== null) {
-      ctx.strokeStyle = '#EF4444'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
-      ctx.beginPath(); ctx.moveTo(xScale(results.criticalUpper), padding.top);
-      ctx.lineTo(xScale(results.criticalUpper), height - padding.bottom); ctx.stroke();
-    }
-    
-    // Observed z-score
-    ctx.setLineDash([]); ctx.strokeStyle = results.reject ? '#10B981' : '#F59E0B'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.moveTo(xScale(results.z), padding.top + 15);
-    ctx.lineTo(xScale(results.z), height - padding.bottom); ctx.stroke();
-    ctx.fillStyle = results.reject ? '#10B981' : '#F59E0B'; ctx.font = 'bold 13px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(`z = ${results.z.toFixed(3)}`, xScale(results.z), padding.top + 10);
-  }, [results, tail]);
+  // Calculate test statistic
+  const { mu0, xbar, s, n, unit } = currentScenario;
+  const df = n - 1;
+  const se = s / Math.sqrt(n);
+  const t = (xbar - mu0) / se;
 
-  const generateChallenge = () => {
-    const types: ChallengeType['type'][] = ['significant', 'hide', 'alpha-trade'];
-    const type = types[Math.floor(Math.random() * types.length)];
-    let challenge: ChallengeType;
-    if (type === 'significant') {
-      const mu = 100 + Math.random() * 50; const sig = 10 + Math.random() * 10;
-      challenge = {
-        type: 'significant', description: `Make the test reject H₀ at α = 0.05 (two-tailed) by choosing n and x̄.`,
-        targetDecision: 'reject', mu0: Math.round(mu), sigma: Math.round(sig * 10) / 10,
-        fixedAlpha: 0.05, fixedTail: 'two',
-        constraints: { nMin: 10, nMax: 200, xbarMin: Math.round((mu - sig * 2) * 10) / 10, xbarMax: Math.round((mu + sig * 2) * 10) / 10 }
-      };
-    } else if (type === 'hide') {
-      const mu = 100 + Math.random() * 50; const sig = 10 + Math.random() * 10;
-      const muTrue = mu + (Math.random() > 0.5 ? 1 : -1) * (sig * 0.3);
-      challenge = {
-        type: 'hide', description: `The true mean is ${muTrue.toFixed(1)}, but you want to FAIL to reject H₀: μ = ${Math.round(mu)}. Choose a small n to hide the difference.`,
-        targetDecision: 'fail-to-reject', mu0: Math.round(mu), muTrue: Math.round(muTrue * 10) / 10, sigma: Math.round(sig * 10) / 10,
-        fixedAlpha: 0.05, fixedTail: 'two',
-        constraints: { nMin: 5, nMax: 50, xbarMin: Math.round((muTrue - sig) * 10) / 10, xbarMax: Math.round((muTrue + sig) * 10) / 10 }
-      };
-    } else {
-      const mu = 100; const sig = 15; const xb = mu + sig * 0.15;
-      challenge = {
-        type: 'alpha-trade', description: `With x̄ = ${xb.toFixed(1)} fixed, choose α and tail type to REJECT H₀.`,
-        targetDecision: 'reject', mu0: mu, sigma: sig, fixedN: 100, fixedXbar: xb,
-        constraints: { allowAlphaChange: true, allowTailChange: true }
-      };
-    }
-    setCurrentChallenge(challenge); setChallengeAttempted(false); setShowHint(false);
-    setMu0(challenge.mu0); setSigma(challenge.sigma);
-    if (challenge.fixedN) setN(challenge.fixedN);
-    if (challenge.fixedXbar) setXbar(challenge.fixedXbar);
-    if (challenge.fixedAlpha) setAlpha(challenge.fixedAlpha);
-    if (challenge.fixedTail) setTail(challenge.fixedTail);
-  };
+  // Calculate effect size (Cohen's d)
+  const effectSize = (xbar - mu0) / s;
 
-  const checkChallenge = () => {
-    if (!currentChallenge || !results) return null;
-    const success = currentChallenge.targetDecision === 'reject' ? results.reject : !results.reject;
-    const close = !success && Math.abs(Math.abs(results.z) - (results.criticalUpper || results.criticalLower || 1.96)) < 0.2;
-    return { success, close };
-  };
+  // Get critical value
+  const critValue = criticalValues[tailType][alpha];
 
-  const getHint = () => {
-    if (!currentChallenge) return '';
-    if (currentChallenge.type === 'significant') {
-      return 'Increasing n decreases the standard error. Choose an x̄ farther from μ₀.';
-    } else if (currentChallenge.type === 'hide') {
-      return 'With small n, the standard error is large, making it harder to detect differences.';
-    } else {
-      return 'A larger α (like 0.10) increases your chance of rejecting. One-tailed tests can also help.';
-    }
-  };
+  // Calculate p-value (approximation)
+  let pValue: number;
+  if (tailType === 'right') {
+    pValue = t > 3 ? 0.002 : (t > 2 ? 0.02 : 0.05);
+  } else if (tailType === 'left') {
+    pValue = t < -3 ? 0.002 : (t < -2 ? 0.02 : 0.05);
+  } else {
+    pValue = Math.abs(t) > 3 ? 0.004 : (Math.abs(t) > 2 ? 0.04 : 0.10);
+  }
 
-  const copyResults = () => {
-    if (!results) return;
-    const h0 = tail === 'two' ? `H₀: μ = ${mu0}` : tail === 'right' ? `H₀: μ ≤ ${mu0}` : `H₀: μ ≥ ${mu0}`;
-    const ha = tail === 'two' ? `Hₐ: μ ≠ ${mu0}` : tail === 'right' ? `Hₐ: μ > ${mu0}` : `Hₐ: μ < ${mu0}`;
-    const text = `Hypothesis Test Results\n${h0}\n${ha}\nα = ${alpha}, ${tail === 'two' ? 'two-tailed' : tail === 'left' ? 'left-tailed' : 'right-tailed'}\n\nSample: n = ${n}, x̄ = ${xbar}, σ = ${sigma}\nSE = ${results.se.toFixed(4)}\nz = ${results.z.toFixed(4)}\np-value = ${results.pValue.toFixed(4)}\n\nDecision: ${results.reject ? 'Reject H₀' : 'Fail to reject H₀'}`;
-    navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000);
-  };
+  // Decision
+  let reject: boolean;
+  if (tailType === 'right') {
+    reject = t > critValue;
+  } else if (tailType === 'left') {
+    reject = t < critValue;
+  } else {
+    reject = Math.abs(t) > critValue;
+  }
 
-  const getInterpretation = () => {
-    if (!results) return '';
-    const direction = tail === 'right' ? 'greater than' : tail === 'left' ? 'less than' : 'different from';
-    if (results.reject) {
-      return `At α = ${alpha}, we reject the null hypothesis. There is sufficient evidence that the population mean is ${direction} ${mu0}.`;
-    } else {
-      return `At α = ${alpha}, we fail to reject the null hypothesis. There is insufficient evidence that the population mean is ${direction} ${mu0}.`;
-    }
-  };
+  // Hypothesis text
+  let h0Text: string, h1Text: string;
+  const formatValue = (val: number, u: string) => u === '$' ? `${u}${val}` : `${val}${u}`;
+  if (tailType === 'right') {
+    h0Text = `μ = ${formatValue(mu0, unit)}`;
+    h1Text = `μ > ${formatValue(mu0, unit)}`;
+  } else if (tailType === 'left') {
+    h0Text = `μ = ${formatValue(mu0, unit)}`;
+    h1Text = `μ < ${formatValue(mu0, unit)}`;
+  } else {
+    h0Text = `μ = ${formatValue(mu0, unit)}`;
+    h1Text = `μ ≠ ${formatValue(mu0, unit)}`;
+  }
 
-  const markStepComplete = (step: StepId) => {
-    setCompletedSteps(prev => new Set(prev).add(step));
-  };
-
-  const goToStep = (step: StepId) => {
-    setCurrentStep(step);
-    if (step === 6) {
-      setChallengeActive(true);
-      if (!currentChallenge) { generateChallenge(); }
-    } else {
-      setChallengeActive(false);
-    }
-  };
+  const conclusionText = reject
+    ? `The test statistic (t = ${t.toFixed(2)}) ${tailType === 'two' ? 'exceeds' : (tailType === 'right' ? 'exceeds' : 'is less than')} the critical value (${critValue.toFixed(3)}). There is sufficient evidence at α = ${alpha} to support the alternative hypothesis.`
+    : `The test statistic (t = ${t.toFixed(2)}) does not ${tailType === 'two' ? 'exceed' : (tailType === 'right' ? 'exceed' : 'fall below')} the critical value (${critValue.toFixed(3)}). There is insufficient evidence at α = ${alpha} to support the alternative hypothesis.`;
 
   return (
-    <div className="w-full h-full flex bg-gray-50">
-      {/* Sidebar */}
-      <div className="w-56 flex-shrink-0 bg-white border-r border-gray-200 p-5">
-        <h3 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wide">Process Steps</h3>
-        <div className="space-y-2">
-          {[
-            { id: 1, label: 'Hypotheses' },
-            { id: 2, label: 'Critical Values' },
-            { id: 3, label: 'Test Statistic' },
-            { id: 4, label: 'Decision' },
-            { id: 5, label: 'Interpretation' },
-            { id: 6, label: 'Challenge' },
-          ].map((step) => (
-            <button
-              key={step.id}
-              onClick={() => goToStep(step.id as StepId)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
-                currentStep === step.id
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : completedSteps.has(step.id as StepId)
-                  ? 'bg-green-50 text-green-700 hover:bg-green-100'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                completedSteps.has(step.id as StepId)
-                  ? 'bg-green-500 text-white'
-                  : currentStep === step.id
-                  ? 'bg-white text-indigo-600'
-                  : 'bg-gray-200 text-gray-500'
-              }`}>
-                {completedSteps.has(step.id as StepId) ? <Check size={14} /> : step.id}
-              </div>
-              <span className="flex-1 text-left font-medium">{step.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto p-8">
-        <div className="max-w-5xl mx-auto space-y-6">
-          {/* Configuration Panel */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Test Configuration</h2>
-            
-            {/* Scenario */}
-            <div className="mb-6">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Scenario</label>
-              <select
-                value={scenario}
-                onChange={(e) => setScenario(e.target.value)}
-                disabled={challengeActive && currentChallenge?.type !== 'alpha-trade'}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                {SCENARIOS.map(s => <option key={s.name} value={s.name}>{s.name}</option>)}
-              </select>
-              <p className="text-sm text-gray-600 mt-2">
-                {SCENARIOS.find(s => s.name === scenario)?.description}
-              </p>
+    <div className="w-full h-full flex flex-col bg-white">
+      <div className="flex-1 bg-white overflow-hidden grid grid-cols-1 md:grid-cols-[40%_60%]">
+        {/* Left Panel */}
+        <div className="bg-gray-50 p-8 overflow-y-auto border-r-2 border-gray-200">
+          {/* Scenario Box */}
+          <div className="bg-yellow-50 p-5 rounded-xl mb-5 border-2 border-[#FFB81C] shadow-md">
+            <div className="text-[#FFB81C] font-bold text-lg mb-4">Real-World Context</div>
+            <div className="text-gray-700 text-sm leading-relaxed">
+              {currentScenario.text}
             </div>
-
-            {/* Parameters Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-6">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">μ₀ (Null Mean)</label>
-                <input
-                  type="number"
-                  value={mu0}
-                  onChange={(e) => setMu0(Number(e.target.value))}
-                  disabled={challengeActive}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">σ (Std Dev)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={sigma}
-                  onChange={(e) => setSigma(Number(e.target.value))}
-                  disabled={challengeActive}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">α (Significance)</label>
-                <select
-                  value={alpha}
-                  onChange={(e) => setAlpha(Number(e.target.value) as AlphaValue)}
-                  disabled={challengeActive && !currentChallenge?.constraints.allowAlphaChange}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value={0.01}>0.01</option>
-                  <option value={0.05}>0.05</option>
-                  <option value={0.10}>0.10</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">n (Sample Size)</label>
-                <input
-                  type="number"
-                  value={n}
-                  onChange={(e) => setN(Number(e.target.value))}
-                  disabled={challengeActive && currentChallenge?.fixedN !== undefined}
-                  min={currentChallenge?.constraints.nMin || 2}
-                  max={currentChallenge?.constraints.nMax || 10000}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">x̄ (Sample Mean)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={xbar}
-                  onChange={(e) => setXbar(Number(e.target.value))}
-                  disabled={challengeActive && currentChallenge?.fixedXbar !== undefined}
-                  min={currentChallenge?.constraints.xbarMin}
-                  max={currentChallenge?.constraints.xbarMax}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Tail Type</label>
-                <select
-                  value={tail}
-                  onChange={(e) => setTail(e.target.value as TailType)}
-                  disabled={challengeActive && !currentChallenge?.constraints.allowTailChange}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="two">Two-tailed</option>
-                  <option value="left">Left-tailed (&lt;)</option>
-                  <option value="right">Right-tailed (&gt;)</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Errors */}
-            {errors.length > 0 && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                {errors.map((err, i) => (
-                  <p key={i} className="text-sm text-red-700 flex items-center gap-2">
-                    <AlertCircle size={16} />{err}
-                  </p>
-                ))}
-              </div>
-            )}
           </div>
 
-          {/* Visualization */}
-          {isValid && results && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Sampling Distribution</h3>
-              <canvas ref={canvasRef} width={900} height={350} className="w-full border border-gray-200 rounded-lg" />
-              
-              {/* Legend */}
-              <div className="mt-4 flex items-center justify-center gap-8 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-indigo-600 rounded"></div>
-                  <span className="text-gray-700">Normal Curve</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-red-500 opacity-20 rounded"></div>
-                  <span className="text-gray-700">Rejection Region</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className={`w-4 h-4 rounded ${results.reject ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
-                  <span className="text-gray-700">Observed z = {results.z.toFixed(3)}</span>
+          {/* Scenario Selection */}
+          <div className="mb-5">
+            <label className="flex items-center gap-2 text-gray-600 font-semibold text-xs mb-2">
+              Preset Scenario <span className="w-4 h-4 bg-[#0066CC] text-white rounded-full inline-flex items-center justify-center text-[10px]">i</span>
+            </label>
+            <select
+              value={selectedScenario}
+              onChange={(e) => setSelectedScenario(e.target.value)}
+              className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg text-sm bg-white cursor-pointer transition-all hover:border-gray-400 focus:outline-none focus:border-[#0066CC] focus:ring-4 focus:ring-[#0066CC]/10"
+            >
+              <option value="loyalty">Repeat Purchase Amount</option>
+              <option value="training">Employee Training Effectiveness</option>
+              <option value="marketing">Email Marketing Click Rate</option>
+              <option value="quality">Manufacturing Quality Control</option>
+              <option value="delivery">Delivery Time Improvement</option>
+              <option value="sports">Sports Marketing - Game Attendance</option>
+              <option value="concert">Concert Ticket Dynamic Pricing</option>
+              <option value="cloud">Cloud Service - Server Response Time</option>
+              <option value="gaming">Gaming Console - Daily Active Users</option>
+              <option value="charity">Charity Food Drive Donations</option>
+            </select>
+          </div>
+
+          {/* Tail Type */}
+          <div className="mb-5">
+            <label className="flex items-center gap-2 text-gray-600 font-semibold text-xs mb-2">
+              Tail Type <span className="w-4 h-4 bg-[#0066CC] text-white rounded-full inline-flex items-center justify-center text-[10px]">i</span>
+            </label>
+            <select
+              value={tailType}
+              onChange={(e) => setTailType(e.target.value as TailType)}
+              className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg text-sm bg-white cursor-pointer transition-all hover:border-gray-400 focus:outline-none focus:border-[#0066CC] focus:ring-4 focus:ring-[#0066CC]/10"
+            >
+              <option value="right">Right-tailed (&gt;)</option>
+              <option value="left">Left-tailed (&lt;)</option>
+              <option value="two">Two-tailed (≠)</option>
+            </select>
+          </div>
+
+          {/* Significance Level */}
+          <div className="mb-5">
+            <label className="flex items-center gap-2 text-gray-600 font-semibold text-xs mb-2">
+              Significance Level (α) <span className="w-4 h-4 bg-[#0066CC] text-white rounded-full inline-flex items-center justify-center text-[10px]">i</span>
+            </label>
+            <select
+              value={alpha}
+              onChange={(e) => setAlpha(parseFloat(e.target.value))}
+              className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg text-sm bg-white cursor-pointer transition-all hover:border-gray-400 focus:outline-none focus:border-[#0066CC] focus:ring-4 focus:ring-[#0066CC]/10"
+            >
+              <option value="0.10">0.10 (10%)</option>
+              <option value="0.05">0.05 (5%)</option>
+              <option value="0.01">0.01 (1%)</option>
+            </select>
+          </div>
+
+          {/* Hypothesis Reminder - shown when not on step 1 */}
+          {activeTab !== 1 && (
+            <div className="mt-auto pt-4">
+              <div className="bg-white border-2 border-gray-200 p-4 rounded-lg shadow-sm">
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2.5">Hypotheses:</div>
+                <div className="text-sm text-gray-700 space-y-2">
+                  <div><strong>H₀:</strong> {h0Text}</div>
+                  <div><strong>H₁:</strong> {h1Text}</div>
                 </div>
               </div>
             </div>
           )}
+        </div>
 
-          {/* Step Content */}
-          {isValid && results && currentStep !== 6 && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              {currentStep === 1 && (
-                <>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Step 1: Define Hypotheses</h3>
-                  <div className="space-y-4 mb-6">
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <p className="text-sm font-semibold text-gray-700 mb-1">Null Hypothesis (H₀)</p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {tail === 'two' ? `μ = ${mu0}` : tail === 'right' ? `μ ≤ ${mu0}` : `μ ≥ ${mu0}`}
-                      </p>
+        {/* Right Panel */}
+        <div className="p-8 overflow-y-auto bg-white">
+          <div className="flex flex-col h-full">
+            {/* Tab Navigation */}
+            <div className="flex gap-2 mb-5 border-b-2 border-gray-200 pb-3">
+              {[
+                { id: 1, label: 'Hypotheses' },
+                { id: 2, label: 'Distribution' },
+                { id: 3, label: 'Test Statistic' },
+                { id: 4, label: 'Decision' },
+                { id: 5, label: 'Interpretation' }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex-1 flex flex-col items-center gap-1.5 px-4 py-2.5 rounded-t-lg border-2 transition-all ${
+                    activeTab === tab.id
+                      ? 'bg-[#0066CC] border-[#0066CC] text-white font-semibold'
+                      : 'bg-white border-gray-200 text-gray-600 hover:border-[#0066CC] hover:bg-gray-50'
+                  }`}
+                >
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold ${
+                    activeTab === tab.id ? 'bg-white/30 text-white' : 'bg-gray-200 text-gray-600'
+                  }`}>
+                    {tab.id}
+                  </span>
+                  <span className="text-xs">{tab.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Tab Content */}
+            <div className="flex-1 overflow-y-auto">
+              {/* Tab 1: State Hypotheses */}
+              {activeTab === 1 && (
+                <div className="mb-6">
+                  <div className="bg-[#004080] text-white px-4 py-3 rounded-t-lg font-semibold text-sm flex items-center gap-2">
+                    <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs">1</div>
+                    <div>State Hypotheses</div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-b-lg border-2 border-gray-200 border-t-0">
+                    <div className="bg-white p-4 rounded-md mb-2.5 border-l-4 border-[#0066CC]">
+                      <div className="font-semibold text-gray-700 text-xs mb-1">NULL HYPOTHESIS (H₀)</div>
+                      <div className="text-gray-600 text-sm font-mono">{h0Text}</div>
                     </div>
-                    <div className="p-4 bg-indigo-50 rounded-lg">
-                      <p className="text-sm font-semibold text-indigo-700 mb-1">Alternative Hypothesis (Hₐ)</p>
-                      <p className="text-2xl font-bold text-indigo-600">
-                        {tail === 'two' ? `μ ≠ ${mu0}` : tail === 'right' ? `μ > ${mu0}` : `μ < ${mu0}`}
-                      </p>
+                    <div className="bg-white p-4 rounded-md mb-3 border-l-4 border-[#FFB81C]">
+                      <div className="font-semibold text-gray-700 text-xs mb-1">ALTERNATIVE HYPOTHESIS (H₁)</div>
+                      <div className="text-gray-600 text-sm font-mono">{h1Text}</div>
+                    </div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                      <div className="text-xs font-semibold text-blue-800 mb-1.5">In Plain Language:</div>
+                      <div className="text-xs text-blue-700 leading-relaxed">
+                        <strong>H₀:</strong> {
+                          selectedScenario === 'loyalty' ? 'The loyalty program has no effect on monthly spending (still $85).' :
+                          selectedScenario === 'training' ? 'The training program has no effect on productivity (still 50 tasks/week).' :
+                          selectedScenario === 'marketing' ? 'The redesigned email has no effect on click rate (still 12%).' :
+                          selectedScenario === 'quality' ? 'The new process has no effect on defect rate (still 3.5%).' :
+                          selectedScenario === 'delivery' ? 'The new routing has no effect on delivery time (still 45 minutes).' :
+                          selectedScenario === 'sports' ? 'The social media campaign has no effect on attendance (still 18,500 fans).' :
+                          selectedScenario === 'concert' ? 'Dynamic pricing has no effect on ticket price (still $85).' :
+                          selectedScenario === 'cloud' ? 'Server optimization has no effect on response time (still 250ms).' :
+                          selectedScenario === 'gaming' ? 'The marketing campaign has no effect on daily active users (still 2.4M).' :
+                          selectedScenario === 'charity' ? 'The awareness campaign has no effect on donations (still 450 lbs).' :
+                          'No effect on the baseline.'
+                        }
+                        <br />
+                        <strong>H₁:</strong> {
+                          selectedScenario === 'loyalty' && tailType === 'right' ? 'The loyalty program increased monthly spending above $85.' :
+                          selectedScenario === 'training' && tailType === 'right' ? 'The training program increased productivity above 50 tasks/week.' :
+                          selectedScenario === 'marketing' && tailType === 'two' ? 'The redesigned email changed the click rate from 12%.' :
+                          selectedScenario === 'quality' && tailType === 'left' ? 'The new process reduced the defect rate below 3.5%.' :
+                          selectedScenario === 'delivery' && tailType === 'left' ? 'The new routing decreased delivery time below 45 minutes.' :
+                          selectedScenario === 'sports' && tailType === 'right' ? 'The social media campaign increased attendance above 18,500 fans.' :
+                          selectedScenario === 'concert' && tailType === 'two' ? 'Dynamic pricing changed the ticket price from $85.' :
+                          selectedScenario === 'cloud' && tailType === 'left' ? 'Server optimization reduced response time below 250ms.' :
+                          selectedScenario === 'gaming' && tailType === 'right' ? 'The marketing campaign increased daily active users above 2.4M.' :
+                          selectedScenario === 'charity' && tailType === 'right' ? 'The awareness campaign increased donations above 450 lbs.' :
+                          tailType === 'right' ? 'There is an increase from the baseline.' :
+                          tailType === 'left' ? 'There is a decrease from the baseline.' :
+                          'There is a change from the baseline.'
+                        }
+                      </div>
                     </div>
                   </div>
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-4">
-                    <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
-                      <Lightbulb size={16} />Key Points
-                    </h4>
-                    <ul className="text-sm text-blue-900 space-y-1 list-disc list-inside">
-                      <li>H₀ represents the status quo or claim we're testing</li>
-                      <li>Hₐ is what we suspect might be true</li>
-                      <li>{tail === 'two' ? 'Two-tailed: testing for any difference' : tail === 'right' ? 'Right-tailed: testing if μ is greater' : 'Left-tailed: testing if μ is less'}</li>
-                    </ul>
-                  </div>
-                  <button
-                    onClick={() => { markStepComplete(1); goToStep(2); }}
-                    className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2 font-medium"
-                  >
-                    Continue to Critical Values<ChevronRight size={18} />
-                  </button>
-                </>
+                </div>
               )}
 
-              {currentStep === 2 && (
-                <>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Step 2: Critical Values & Distribution</h3>
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <p className="text-sm font-semibold text-gray-700 mb-1">Significance Level</p>
-                      <p className="text-2xl font-bold text-gray-900">α = {alpha}</p>
-                    </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <p className="text-sm font-semibold text-gray-700 mb-1">Standard Error</p>
-                      <p className="text-2xl font-bold text-gray-900">{results.se.toFixed(4)}</p>
-                      <p className="text-xs text-gray-500 mt-1">σ/√n = {sigma}/√{n}</p>
-                    </div>
-                    <div className="p-4 bg-red-50 rounded-lg">
-                      <p className="text-sm font-semibold text-red-700 mb-1">Critical Value(s)</p>
-                      <p className="text-lg font-bold text-red-600">
-                        {results.criticalLower !== null && `z = ${results.criticalLower.toFixed(3)}`}
-                        {results.criticalLower !== null && results.criticalUpper !== null && ', '}
-                        {results.criticalUpper !== null && `z = ${results.criticalUpper.toFixed(3)}`}
-                      </p>
-                    </div>
-                    <div className="p-4 bg-red-50 rounded-lg">
-                      <p className="text-sm font-semibold text-red-700 mb-1">Rejection Region</p>
-                      <p className="text-sm font-bold text-red-600">
-                        {tail === 'two' && `|z| > ${results.criticalUpper?.toFixed(3)}`}
-                        {tail === 'right' && `z > ${results.criticalUpper?.toFixed(3)}`}
-                        {tail === 'left' && `z < ${results.criticalLower?.toFixed(3)}`}
-                      </p>
-                    </div>
+              {/* Tab 2: Distribution & Critical Values */}
+              {activeTab === 2 && (
+                <div className="mb-6">
+                  <div className="bg-[#004080] text-white px-4 py-3 rounded-t-lg font-semibold text-sm flex items-center gap-2">
+                    <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs">2</div>
+                    <div>Sampling Distribution & Critical Values</div>
                   </div>
-                  <button
-                    onClick={() => { markStepComplete(2); goToStep(3); }}
-                    className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2 font-medium"
-                  >
-                    Continue to Test Statistic<ChevronRight size={18} />
-                  </button>
-                </>
-              )}
-
-              {currentStep === 3 && (
-                <>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Step 3: Calculate Test Statistic</h3>
-                  <div className="space-y-4 mb-6">
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <p className="text-sm font-semibold text-gray-700 mb-2">Formula</p>
-                      <p className="text-lg font-mono text-gray-900">z = (x̄ - μ₀) / SE</p>
-                    </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <p className="text-sm font-semibold text-gray-700 mb-2">Calculation</p>
-                      <p className="text-lg font-mono text-gray-900">
-                        z = ({xbar} - {mu0}) / {results.se.toFixed(4)} = {results.z.toFixed(4)}
-                      </p>
-                    </div>
-                    <div className={`p-4 rounded-lg ${results.reject ? 'bg-green-50' : 'bg-yellow-50'}`}>
-                      <p className={`text-sm font-semibold mb-1 ${results.reject ? 'text-green-700' : 'text-yellow-700'}`}>
-                        p-value
-                      </p>
-                      <p className={`text-2xl font-bold ${results.reject ? 'text-green-600' : 'text-yellow-600'}`}>
-                        {results.pValue.toFixed(4)}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => { markStepComplete(3); goToStep(4); }}
-                    className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2 font-medium"
-                  >
-                    Continue to Decision<ChevronRight size={18} />
-                  </button>
-                </>
-              )}
-
-              {currentStep === 4 && (
-                <>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Step 4: Make Decision</h3>
-                  <div className={`p-6 rounded-xl mb-6 ${results.reject ? 'bg-green-50 border-2 border-green-500' : 'bg-yellow-50 border-2 border-yellow-500'}`}>
-                    <div className="flex items-center gap-3 mb-3">
-                      {results.reject ? (
-                        <CheckCircle2 size={32} className="text-green-600" />
-                      ) : (
-                        <AlertCircle size={32} className="text-yellow-600" />
-                      )}
-                      <div>
-                        <p className={`text-lg font-bold ${results.reject ? 'text-green-900' : 'text-yellow-900'}`}>
-                          {results.reject ? 'Reject H₀' : 'Fail to Reject H₀'}
-                        </p>
-                        <p className={`text-sm ${results.reject ? 'text-green-700' : 'text-yellow-700'}`}>
-                          {results.reject 
-                            ? `z = ${results.z.toFixed(3)} falls in the rejection region`
-                            : `z = ${results.z.toFixed(3)} does not fall in the rejection region`
+                  <div className="bg-gray-50 p-4 rounded-b-lg border-2 border-gray-200 border-t-0">
+                    {/* Visualization */}
+                    <div className="bg-white p-6 rounded-lg mb-4 border border-gray-200">
+                      <svg viewBox="0 0 600 255" className="w-full h-auto">
+                        {/* Define the t-distribution curve */}
+                        {(() => {
+                          const points: string[] = [];
+                          const xScale = 60; // pixels per unit
+                          const yScale = 220; // vertical scale
+                          const centerX = 300;
+                          const centerY = 212;
+                          
+                          // Generate t-distribution curve points (approximation using normal-like curve)
+                          for (let x = -5; x <= 5; x += 0.1) {
+                            const y = Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI);
+                            points.push(`${centerX + x * xScale},${centerY - y * yScale}`);
                           }
-                        </p>
+                          
+                          return (
+                            <>
+                              {/* Grid lines */}
+                              <line x1="0" y1={centerY} x2="600" y2={centerY} stroke="#e5e7eb" strokeWidth="1" />
+                              <line x1={centerX} y1="0" x2={centerX} y2="300" stroke="#e5e7eb" strokeWidth="1" strokeDasharray="4 4" />
+                              
+                              {/* Shaded rejection region(s) */}
+                              {tailType === 'right' && (
+                                <path
+                                  d={`M ${centerX + critValue * xScale} ${centerY} ${points.filter((_, i) => (-5 + i * 0.1) >= critValue).join(' L ')} L ${centerX + 5 * xScale} ${centerY} Z`}
+                                  fill="#ef4444"
+                                  fillOpacity="0.3"
+                                />
+                              )}
+                              {tailType === 'left' && (
+                                <path
+                                  d={`M ${centerX - 5 * xScale} ${centerY} ${points.filter((_, i) => (-5 + i * 0.1) <= critValue).join(' L ')} L ${centerX + critValue * xScale} ${centerY} Z`}
+                                  fill="#ef4444"
+                                  fillOpacity="0.3"
+                                />
+                              )}
+                              {tailType === 'two' && (
+                                <>
+                                  <path
+                                    d={`M ${centerX - 5 * xScale} ${centerY} L ${points.filter((_, i) => (-5 + i * 0.1) <= -critValue).join(' L ')} L ${centerX - critValue * xScale} ${centerY} Z`}
+                                    fill="#ef4444"
+                                    fillOpacity="0.3"
+                                  />
+                                  <path
+                                    d={`M ${centerX + critValue * xScale} ${centerY} L ${points.filter((_, i) => (-5 + i * 0.1) >= critValue).join(' L ')} L ${centerX + 5 * xScale} ${centerY} Z`}
+                                    fill="#ef4444"
+                                    fillOpacity="0.3"
+                                  />
+                                </>
+                              )}
+                              
+                              {/* Main curve */}
+                              <polyline
+                                points={points.join(' ')}
+                                fill="none"
+                                stroke="#0066CC"
+                                strokeWidth="2.5"
+                              />
+                              
+                              {/* Critical value line(s) */}
+                              {tailType === 'right' && (
+                                <>
+                                  <line
+                                    x1={centerX + critValue * xScale}
+                                    y1={centerY}
+                                    x2={centerX + critValue * xScale}
+                                    y2={centerY - 100}
+                                    stroke="#FFB81C"
+                                    strokeWidth="2"
+                                    strokeDasharray="4 4"
+                                  />
+                                  <text
+                                    x={centerX + critValue * xScale}
+                                    y={centerY + 20}
+                                    textAnchor="middle"
+                                    fill="#FFB81C"
+                                    fontSize="12"
+                                    fontWeight="bold"
+                                  >
+                                    {critValue.toFixed(3)}
+                                  </text>
+                                </>
+                              )}
+                              {tailType === 'left' && (
+                                <>
+                                  <line
+                                    x1={centerX + critValue * xScale}
+                                    y1={centerY}
+                                    x2={centerX + critValue * xScale}
+                                    y2={centerY - 100}
+                                    stroke="#FFB81C"
+                                    strokeWidth="2"
+                                    strokeDasharray="4 4"
+                                  />
+                                  <text
+                                    x={centerX + critValue * xScale}
+                                    y={centerY + 20}
+                                    textAnchor="middle"
+                                    fill="#FFB81C"
+                                    fontSize="12"
+                                    fontWeight="bold"
+                                  >
+                                    {critValue.toFixed(3)}
+                                  </text>
+                                </>
+                              )}
+                              {tailType === 'two' && (
+                                <>
+                                  <line
+                                    x1={centerX - critValue * xScale}
+                                    y1={centerY}
+                                    x2={centerX - critValue * xScale}
+                                    y2={centerY - 100}
+                                    stroke="#FFB81C"
+                                    strokeWidth="2"
+                                    strokeDasharray="4 4"
+                                  />
+                                  <line
+                                    x1={centerX + critValue * xScale}
+                                    y1={centerY}
+                                    x2={centerX + critValue * xScale}
+                                    y2={centerY - 100}
+                                    stroke="#FFB81C"
+                                    strokeWidth="2"
+                                    strokeDasharray="4 4"
+                                  />
+                                  <text
+                                    x={centerX - critValue * xScale}
+                                    y={centerY + 20}
+                                    textAnchor="middle"
+                                    fill="#FFB81C"
+                                    fontSize="12"
+                                    fontWeight="bold"
+                                  >
+                                    {(-critValue).toFixed(3)}
+                                  </text>
+                                  <text
+                                    x={centerX + critValue * xScale}
+                                    y={centerY + 20}
+                                    textAnchor="middle"
+                                    fill="#FFB81C"
+                                    fontSize="12"
+                                    fontWeight="bold"
+                                  >
+                                    {critValue.toFixed(3)}
+                                  </text>
+                                </>
+                              )}
+                              
+                              {/* Test statistic line */}
+                              {t >= -5 && t <= 5 && (
+                                <>
+                                  <line
+                                    x1={centerX + t * xScale}
+                                    y1={centerY}
+                                    x2={centerX + t * xScale}
+                                    y2={centerY - 120}
+                                    stroke="#10b981"
+                                    strokeWidth="3"
+                                  />
+                                  <circle
+                                    cx={centerX + t * xScale}
+                                    cy={centerY - 120}
+                                    r="5"
+                                    fill="#10b981"
+                                  />
+                                  <text
+                                    x={centerX + t * xScale}
+                                    y={centerY - 130}
+                                    textAnchor="middle"
+                                    fill="#10b981"
+                                    fontSize="13"
+                                    fontWeight="bold"
+                                  >
+                                    t = {t.toFixed(2)}
+                                  </text>
+                                </>
+                              )}
+                              
+                              {/* X-axis labels */}
+                              <text x={centerX} y={centerY + 35} textAnchor="middle" fill="#6b7280" fontSize="11">0</text>
+                              <text x="20" y="20" fill="#6b7280" fontSize="11" fontWeight="600">t-distribution (df = {df})</text>
+                              
+                              {/* Legend */}
+                              <g transform="translate(20, 40)">
+                                <rect x="0" y="0" width="15" height="15" fill="#ef4444" fillOpacity="0.3" stroke="#ef4444" />
+                                <text x="20" y="12" fill="#6b7280" fontSize="10">Rejection Region (α = {alpha})</text>
+                                
+                                <line x1="0" y1="28" x2="15" y2="28" stroke="#FFB81C" strokeWidth="2" strokeDasharray="3 3" />
+                                <text x="20" y="32" fill="#6b7280" fontSize="10">Critical Value</text>
+                                
+                                <line x1="0" y1="48" x2="15" y2="48" stroke="#10b981" strokeWidth="3" />
+                                <text x="20" y="52" fill="#6b7280" fontSize="10">Test Statistic</text>
+                              </g>
+                            </>
+                          );
+                        })()}
+                      </svg>
+                    </div>
+
+                    {/* Data boxes */}
+                    <div className="bg-white p-4 rounded-md mb-2.5 border-l-4 border-[#0066CC]">
+                      <div className="font-semibold text-gray-700 text-xs mb-1">DISTRIBUTION</div>
+                      <div className="text-gray-600 text-sm font-mono">t-distribution (df = {df})</div>
+                    </div>
+                    <div className="bg-white p-4 rounded-md mb-2.5 border-l-4 border-[#FFB81C]">
+                      <div className="font-semibold text-gray-700 text-xs mb-1">CRITICAL VALUE{tailType === 'two' ? 'S' : ''}</div>
+                      <div className="text-gray-600 text-sm font-mono">
+                        {tailType === 'two' ? `±${critValue.toFixed(3)}` : `t = ${critValue.toFixed(3)}`}
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className={`font-semibold ${results.reject ? 'text-green-700' : 'text-yellow-700'}`}>Observed z-score</p>
-                        <p className={`text-lg font-bold ${results.reject ? 'text-green-900' : 'text-yellow-900'}`}>{results.z.toFixed(4)}</p>
-                      </div>
-                      <div>
-                        <p className={`font-semibold ${results.reject ? 'text-green-700' : 'text-yellow-700'}`}>p-value</p>
-                        <p className={`text-lg font-bold ${results.reject ? 'text-green-900' : 'text-yellow-900'}`}>{results.pValue.toFixed(4)}</p>
-                      </div>
+                    <div className="bg-white p-4 rounded-md mb-2.5 border-l-4 border-[#10b981]">
+                      <div className="font-semibold text-gray-700 text-xs mb-1">TEST STATISTIC</div>
+                      <div className="text-gray-600 text-sm font-mono">t = {t.toFixed(2)}</div>
+                    </div>
+                    <div className="bg-white p-4 rounded-md border-l-4 border-[#0066CC]">
+                      <div className="font-semibold text-gray-700 text-xs mb-1">SIGNIFICANCE LEVEL (α)</div>
+                      <div className="text-gray-600 text-sm font-mono">{alpha}</div>
                     </div>
                   </div>
-                  <button
-                    onClick={() => { markStepComplete(4); goToStep(5); }}
-                    className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2 font-medium"
-                  >
-                    Continue to Interpretation<ChevronRight size={18} />
-                  </button>
-                </>
-              )}
-
-              {currentStep === 5 && (
-                <>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Step 5: Interpret Results</h3>
-                  <div className="p-6 bg-blue-50 border border-blue-200 rounded-xl mb-6">
-                    <p className="text-base text-blue-900 leading-relaxed">
-                      {getInterpretation()}
-                    </p>
-                  </div>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => { markStepComplete(5); goToStep(1); }}
-                      className="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium"
-                    >
-                      Start Over
-                    </button>
-                    <button
-                      onClick={copyResults}
-                      className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2 font-medium"
-                    >
-                      {copied ? <CheckCircle2 size={18} /> : <Copy size={18} />}
-                      {copied ? 'Copied!' : 'Copy Results'}
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Challenge Mode */}
-          {currentStep === 6 && currentChallenge && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Challenge Mode</h3>
-              <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg mb-6">
-                <p className="text-base text-purple-900">{currentChallenge.description}</p>
-              </div>
-
-              {challengeAttempted && checkChallenge() && (
-                <div className={`p-4 rounded-lg mb-4 ${checkChallenge()?.success ? 'bg-green-50 border border-green-200' : checkChallenge()?.close ? 'bg-yellow-50 border border-yellow-200' : 'bg-red-50 border border-red-200'}`}>
-                  <p className={`font-semibold mb-2 ${checkChallenge()?.success ? 'text-green-900' : checkChallenge()?.close ? 'text-yellow-900' : 'text-red-900'}`}>
-                    {checkChallenge()?.success ? '✓ Success!' : checkChallenge()?.close ? '⚠ Close!' : '✗ Not quite'}
-                  </p>
-                  <p className={`text-sm ${checkChallenge()?.success ? 'text-green-900' : checkChallenge()?.close ? 'text-yellow-900' : 'text-red-900'}`}>
-                    {checkChallenge()?.success 
-                      ? `You achieved the target! Your z = ${results?.z.toFixed(3)}`
-                      : checkChallenge()?.close
-                      ? `You were close! Your z = ${results?.z.toFixed(3)} was only ${Math.abs(Math.abs(results?.z || 0) - (results?.criticalUpper || results?.criticalLower || 1.96)).toFixed(3)} away`
-                      : `Your z = ${results?.z.toFixed(3)}, p = ${results?.pValue.toFixed(4)}. Target was to ${currentChallenge.targetDecision.replace('-', ' ')}.`
-                    }
-                  </p>
                 </div>
               )}
 
-              <div className="flex gap-3 flex-wrap">
-                <button
-                  onClick={() => setChallengeAttempted(true)}
-                  className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium"
-                >
-                  Check My Attempt
-                </button>
-                <button
-                  onClick={generateChallenge}
-                  className="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center gap-2 font-medium"
-                >
-                  <RefreshCw size={18} />New Challenge
-                </button>
-                {!showHint ? (
-                  <button
-                    onClick={() => setShowHint(true)}
-                    className="px-6 py-2.5 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition flex items-center gap-2 font-medium"
-                  >
-                    <Eye size={18} />Show Hint
-                  </button>
-                ) : (
-                  <div className="flex-1 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <p className="text-sm text-yellow-900 font-medium">{getHint()}</p>
+              {/* Tab 3: Test Statistic */}
+              {activeTab === 3 && (
+                <div className="mb-6">
+                  <div className="bg-[#004080] text-white px-4 py-3 rounded-t-lg font-semibold text-sm flex items-center gap-2">
+                    <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs">3</div>
+                    <div>Calculate Test Statistic</div>
                   </div>
-                )}
-              </div>
+                  <div className="bg-gray-50 p-4 rounded-b-lg border-2 border-gray-200 border-t-0">
+                    <div className="bg-white p-4 rounded-md font-mono text-sm leading-loose text-gray-700 mb-3">
+                      <div>t = (x̄ - μ₀) / (s / √n)</div>
+                      <div>t = ({xbar} - {mu0}) / ({s} / √{n})</div>
+                      <div>t = {(xbar - mu0).toFixed(2)} / {se.toFixed(2)}</div>
+                      <div className="font-bold">t = {t.toFixed(2)}</div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
+                        <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Sample Mean (x̄)</div>
+                        <div className="text-lg font-bold text-gray-800">{unit === '$' ? `${unit}${xbar}` : `${xbar}${unit}`}</div>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
+                        <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Population Mean (μ₀)</div>
+                        <div className="text-lg font-bold text-gray-800">{unit === '$' ? `${unit}${mu0}` : `${mu0}${unit}`}</div>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
+                        <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Std Dev (s)</div>
+                        <div className="text-lg font-bold text-gray-800">{unit === '$' ? `${unit}${s}` : `${s}${unit}`}</div>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
+                        <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Sample Size (n)</div>
+                        <div className="text-lg font-bold text-gray-800">{n}</div>
+                      </div>
+                    </div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-2">
+                      <div className="text-xs text-blue-700">
+                        <strong>Compare to critical value:</strong> {tailType === 'two' ? `±${critValue.toFixed(3)}` : critValue.toFixed(3)} (at α = {alpha})
+                      </div>
+                    </div>
+                    <div className="bg-blue-50/30 border border-blue-100 rounded-md p-3">
+                      <div className="text-xs text-gray-600">
+                        <strong>Effect Size (Cohen's d):</strong> {effectSize.toFixed(3)} {Math.abs(effectSize) < 0.2 ? '(small)' : Math.abs(effectSize) < 0.5 ? '(small-medium)' : Math.abs(effectSize) < 0.8 ? '(medium-large)' : '(large)'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 4: Decision */}
+              {activeTab === 4 && (
+                <div className="mb-6">
+                  <div className="bg-[#004080] text-white px-4 py-3 rounded-t-lg font-semibold text-sm flex items-center gap-2">
+                    <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs">4</div>
+                    <div>Make Decision</div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-b-lg border-2 border-gray-200 border-t-0">
+                    <div className="bg-white p-4 rounded-lg mb-3">
+                      <div className="font-semibold text-gray-700 mb-2 text-sm">Decision</div>
+                      <div className={`text-2xl font-bold mb-2 ${reject ? 'text-red-600' : 'text-green-600'}`}>
+                        {reject ? 'Reject H₀' : 'Fail to Reject H₀'}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
+                        <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Test Statistic</div>
+                        <div className="text-lg font-bold text-gray-800">{t.toFixed(2)}</div>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
+                        <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Critical Value</div>
+                        <div className="text-lg font-bold text-gray-800">{tailType === 'two' ? `±${critValue.toFixed(3)}` : critValue.toFixed(3)}</div>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
+                        <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">P-Value</div>
+                        <div className="text-lg font-bold text-gray-800">{pValue.toFixed(3)}</div>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
+                        <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Alpha (α)</div>
+                        <div className="text-lg font-bold text-gray-800">{alpha}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 5: Interpretation */}
+              {activeTab === 5 && (
+                <div className="mb-6">
+                  <div className="bg-[#004080] text-white px-4 py-3 rounded-t-lg font-semibold text-sm flex items-center gap-2">
+                    <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs">5</div>
+                    <div>Interpret Result</div>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-b-lg border-2 border-gray-200 border-t-0">
+                    <div className="bg-white p-4 rounded-lg">
+                      <div className="font-semibold text-gray-700 mb-2 text-sm">Interpretation</div>
+                      <div className="text-gray-600 text-sm leading-relaxed">
+                        {conclusionText}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

@@ -193,7 +193,7 @@ const NormalCurveTool: React.FC = () => {
                       inputMode="decimal"
                       value={mean}
                       onChange={(e) => setMean(Number(e.target.value))}
-                      className="w-full px-3 py-2 pr-8 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-sm"
+                      className="w-full px-3 py-2 pr-8 bg-slate-50 border border-slate-200 rounded-3xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-sm"
                     />
                     <div className="absolute right-0 top-0 bottom-0 flex flex-col border-l border-slate-200">
                       <button
@@ -219,7 +219,7 @@ const NormalCurveTool: React.FC = () => {
                       inputMode="decimal"
                       value={sd}
                       onChange={(e) => setSd(Math.max(0.01, Number(e.target.value)))}
-                      className="w-full px-3 py-2 pr-8 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-sm"
+                      className="w-full px-3 py-2 pr-8 bg-slate-50 border border-slate-200 rounded-3xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-sm"
                     />
                     <div className="absolute right-0 top-0 bottom-0 flex flex-col border-l border-slate-200">
                       <button
@@ -255,7 +255,7 @@ const NormalCurveTool: React.FC = () => {
                       inputMode="decimal"
                       value={val1}
                       onChange={(e) => setVal1(e.target.value)}
-                      className="w-full px-3 py-2 pr-8 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-sm"
+                      className="w-full px-3 py-2 pr-8 bg-slate-50 border border-slate-200 rounded-3xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-sm"
                     />
                     <div className="absolute right-0 top-0 bottom-0 flex flex-col border-l border-slate-200">
                       <button
@@ -282,7 +282,7 @@ const NormalCurveTool: React.FC = () => {
                       inputMode="decimal"
                       value={val2}
                       onChange={(e) => setVal2(e.target.value)}
-                      className="w-full px-3 py-2 pr-8 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-sm"
+                      className="w-full px-3 py-2 pr-8 bg-slate-50 border border-slate-200 rounded-3xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-sm"
                     />
                     <div className="absolute right-0 top-0 bottom-0 flex flex-col border-l border-slate-200">
                       <button
@@ -382,14 +382,14 @@ const NormalCurveTool: React.FC = () => {
           </section>
 
           {/* Interpretation Box */}
-          <div className="mt-6 p-5 bg-white rounded-2xl border border-slate-100 shadow-md">
+          <div className="mt-6 rounded-2xl border border-sky-200 bg-sky-50 p-5 shadow-sm">
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600">
-                <Info size={16} />
+              <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl border border-sky-200 bg-white text-sky-600 shadow-[0_1px_0_rgba(15,23,42,0.05)]">
+                <Info size={18} />
               </div>
               <div className="space-y-1">
-                <h4 className="text-sm font-bold text-slate-800 tracking-tight">Interpretation</h4>
-                <p className="text-xs text-slate-500 leading-relaxed">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-sky-700">Interpretation</p>
+                <p className="text-sm text-slate-700 leading-relaxed">
                   The shaded region represents <strong>{ (results.area * 100).toFixed(2) }%</strong> of the total population. 
                   In a normal distribution, the area under the entire curve is always exactly 1.0. 
                   This tool calculates the probability that a randomly selected observation falls within the specified range.
@@ -404,7 +404,7 @@ const NormalCurveTool: React.FC = () => {
           {/* Result Cards - Top */}
           <div className="flex gap-8 justify-between mb-6">
             {/* Z-Score 1 Card */}
-            <div className="flex-1 max-w-xs bg-white rounded-lg p-4 shadow-md border border-slate-100 text-center">
+            <div className="flex-1 max-w-xs bg-white rounded-3xl p-4 shadow-md border border-slate-100 text-center">
               <span className="text-xs text-slate-400 uppercase font-bold tracking-wider block mb-2">Z-Score 1</span>
               <div className="text-3xl font-bold text-slate-800 mb-1.5">
                 {isNaN(results.z1) ? '—' : results.z1.toFixed(2)}
@@ -413,7 +413,7 @@ const NormalCurveTool: React.FC = () => {
             </div>
 
             {/* Z-Score 2 Card */}
-            <div className="flex-1 max-w-xs bg-white rounded-lg p-4 shadow-md border border-slate-100 text-center">
+            <div className="flex-1 max-w-xs bg-white rounded-3xl p-4 shadow-md border border-slate-100 text-center">
               <span className="text-xs text-slate-400 uppercase font-bold tracking-wider block mb-2">Z-Score 2</span>
               <div className="text-3xl font-bold text-slate-800 mb-1.5">
                 {isNaN(results.z2) ? '—' : results.z2.toFixed(2)}
@@ -422,7 +422,7 @@ const NormalCurveTool: React.FC = () => {
             </div>
 
             {/* Probability Card */}
-            <div className="flex-1 max-w-xs bg-white rounded-lg p-4 shadow-md border border-slate-100 text-center">
+            <div className="flex-1 max-w-xs bg-white rounded-3xl p-4 shadow-md border border-slate-100 text-center">
               <span className="text-xs text-slate-400 uppercase font-bold tracking-wider block mb-2">Probability</span>
               <div className="text-3xl font-bold text-indigo-600 mb-1.5">
                 {isNaN(results.area) ? '—' : results.area.toFixed(4)}
@@ -473,9 +473,9 @@ const NormalCurveTool: React.FC = () => {
                         const z = ((x - mean) / sd).toFixed(3);
                         const p = (payload[0].payload.y * sd).toFixed(4);
                         return (
-                          <div className="bg-white rounded-lg p-3 shadow-lg border border-slate-200">
-                            <p className="text-xs font-bold text-slate-700">Z: {z}</p>
-                            <p className="text-xs font-bold text-blue-500">P: {p}</p>
+                          <div className="bg-indigo-900 text-white rounded-3xl p-3 shadow-lg border border-indigo-700">
+                            <p className="text-xs font-bold text-indigo-200">Z: {z}</p>
+                            <p className="text-xs font-bold text-indigo-300">P: {p}</p>
                           </div>
                         );
                       }

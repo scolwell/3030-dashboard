@@ -10,7 +10,9 @@ import {
   ReferenceLine,
   Label,
   BarChart,
-  Bar
+  Bar,
+  Area,
+  AreaChart
 } from 'recharts';
 import { RotateCcw, Play } from 'lucide-react';
 
@@ -20,6 +22,7 @@ const CoinTossSimulation: React.FC = () => {
   const [numTosses, setNumTosses] = useState<number>(0);
   const [headsProb, setHeadsProb] = useState<number>(0.5);
   const [tosses, setTosses] = useState<number[]>([]);
+  const [showCI, setShowCI] = useState<boolean>(true);
 
   // Generate random tosses
   const generateTosses = useCallback(() => {
@@ -44,20 +47,34 @@ const CoinTossSimulation: React.FC = () => {
   // Calculate proportions for the chart
   const chartData = useMemo(() => {
     if (tosses.length === 0 || numTosses === 0) {
-      return [{ toss: 1, proportion: 0, dummy: 0 }]; // Dummy point for initial state
+      return [{ toss: 1, proportion: 0, ciUpper: 0, ciLower: 0, dummy: 0 }]; // Dummy point for initial state
     }
     
     let headCount = 0;
     const data = [];
+    const zScore = 1.96; // 95% confidence
     
     for (let i = 0; i < numTosses; i++) {
       if (tosses[i] < headsProb) {
         headCount++;
       }
       const proportion = headCount / (i + 1);
+      const n = i + 1;
+      
+      // Wilson score interval
+      const pHat = proportion;
+      const denominator = 1 + (zScore * zScore) / n;
+      const centre = (pHat + (zScore * zScore) / (2 * n)) / denominator;
+      const adjustment = (zScore * Math.sqrt(pHat * (1 - pHat) / n + (zScore * zScore) / (4 * n * n))) / denominator;
+      
+      const ciLower = Math.max(0, centre - adjustment);
+      const ciUpper = Math.min(1, centre + adjustment);
+      
       data.push({
         toss: i + 1,
         proportion: parseFloat(proportion.toFixed(4)),
+        ciUpper: parseFloat(ciUpper.toFixed(4)),
+        ciLower: parseFloat(ciLower.toFixed(4)),
       });
     }
     
@@ -125,13 +142,13 @@ const CoinTossSimulation: React.FC = () => {
       {/* Main Content - Two Column Layout */}
       <div className="flex-1 flex gap-6 min-h-0">
         {/* Left Column - Controls */}
-        <div className="w-80 flex flex-col gap-6">
+        <div className="w-80 flex flex-col gap-6 min-h-0">
           {/* Controls Card */}
-          <div className="bg-white rounded-lg shadow-sm p-6 flex-1 flex flex-col">
+          <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col">
             <h3 className="text-lg font-semibold text-slate-800 mb-6">Controls</h3>
             
             {/* Number of Tosses Slider */}
-            <div className="mb-8">
+            <div className="mb-6">
               <div className="flex justify-between items-center mb-3">
                 <label className="text-sm font-medium text-slate-700">
                   Number of Flips
@@ -152,11 +169,11 @@ const CoinTossSimulation: React.FC = () => {
               <div className="flex gap-3 mt-4">
                 <button
                   onClick={() => {
-                    if (numTosses < targetTosses) {
+                    if (numTosses < MAX_TOSSES) {
                       setNumTosses(numTosses + 1);
                     }
                   }}
-                  disabled={numTosses >= targetTosses}
+                  disabled={numTosses >= MAX_TOSSES}
                   className="flex-1 px-4 py-3 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Flip 1 Coin
@@ -165,13 +182,13 @@ const CoinTossSimulation: React.FC = () => {
                   onClick={performToss}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
                 >
-                  Flip {targetTosses}
+                  Flip {targetTosses} Coins
                 </button>
               </div>
             </div>
 
             {/* Probability Slider */}
-            <div className="mb-8">
+            <div className="mb-6">
               <div className="flex justify-between items-center mb-3">
                 <label className="text-sm font-medium text-slate-700">
                   P(Heads)
@@ -192,22 +209,36 @@ const CoinTossSimulation: React.FC = () => {
               <p className="text-xs text-slate-500 mt-2">Set probability of heads</p>
             </div>
 
+            {/* Show Confidence Interval Checkbox */}
+            <div className="mb-6 flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="showCI"
+                checked={showCI}
+                onChange={(e) => setShowCI(e.target.checked)}
+                className="w-4 h-4 accent-indigo-600 cursor-pointer"
+              />
+              <label htmlFor="showCI" className="text-sm font-medium text-slate-700 cursor-pointer">
+                Show 95% CI
+              </label>
+            </div>
+
             {/* Buttons */}
-            <div className="flex gap-3 mt-auto">
+            <div className="flex gap-2 mt-auto">
               <button
                 onClick={() => {
                   generateTosses();
                   setNumTosses(0);
                   setTargetTosses(50);
                 }}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors text-sm font-medium"
+                className="flex-1 flex items-center justify-center gap-1 px-2 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors text-xs font-medium whitespace-nowrap"
               >
-                <RotateCcw size={16} />
+                <RotateCcw size={14} />
                 New Series
               </button>
               <button
                 onClick={() => setHeadsProb(0.5)}
-                className="flex-1 px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors text-sm font-medium"
+                className="flex-1 px-2 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors text-xs font-medium whitespace-nowrap"
               >
                 Reset 50%
               </button>
@@ -215,22 +246,19 @@ const CoinTossSimulation: React.FC = () => {
           </div>
 
           {/* Info Card */}
-          <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-6">
+          <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-6 flex-1 flex flex-col min-h-0">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-sm font-semibold text-slate-800">Statistics</h4>
-              <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-white text-indigo-700 border border-indigo-200">
-                {numTosses} flips
-              </span>
             </div>
 
-            <div className="bg-white border border-indigo-100 rounded-lg p-3">
+            <div className="bg-white border border-indigo-100 rounded-lg p-3 flex-1 flex flex-col min-h-0">
               <p className="text-xs font-semibold text-slate-700 mb-2">Heads vs Tails</p>
-              <div style={{ width: '100%', height: 160 }}>
+              <div className="flex-1 w-full min-h-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={[
                     { label: 'Heads', value: headsProp },
                     { label: 'Tails', value: tailsProp }
-                  ]} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+                  ]} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                     <XAxis dataKey="label" tick={{ fontSize: 12, fill: '#475569' }} />
                     <YAxis domain={[0, 1]} ticks={[0, 0.25, 0.5, 0.75, 1]} tickFormatter={(v) => `${(v * 100).toFixed(0)}%`} tick={{ fontSize: 12, fill: '#475569' }} width={40} />
@@ -239,9 +267,10 @@ const CoinTossSimulation: React.FC = () => {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-              <div className="flex justify-between text-xs text-slate-600 mt-2">
+              <div className="grid grid-cols-3 gap-0 text-xs text-slate-600 mt-1 text-center">
                 <span>Heads: {headsCount}</span>
                 <span>Tails: {tailsCount}</span>
+                <span>Total: {numTosses}</span>
               </div>
             </div>
           </div>
@@ -252,7 +281,13 @@ const CoinTossSimulation: React.FC = () => {
           <h3 className="text-lg font-semibold text-slate-800 mb-4">Convergence to True Probability</h3>
           <div className="flex-1 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 10, right: 100, left: 60, bottom: 50 }}>
+              <AreaChart data={chartData} margin={{ top: 10, right: 100, left: 60, bottom: 50 }}>
+                <defs>
+                  <linearGradient id="ciGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#93c5fd" stopOpacity={0.3}/>
+                    <stop offset="100%" stopColor="#93c5fd" stopOpacity={0.3}/>
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis 
                   type="number"
@@ -268,7 +303,7 @@ const CoinTossSimulation: React.FC = () => {
                   type="number"
                   stroke="#64748b"
                   domain={[0, 1]}
-                  ticks={[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]}
+                  ticks={[0, 0.25, 0.5, 0.75, 1]}
                   tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
                   label={{ value: 'Proportion Landing Heads', angle: -90, position: 'left', offset: 10, textAnchor: 'middle' }}
                 />
@@ -289,6 +324,28 @@ const CoinTossSimulation: React.FC = () => {
                   strokeDasharray="5 5"
                   label={{ value: `P(H) = ${(headsProb * 100).toFixed(1)}%`, position: 'right', fill: '#ef4444', fontSize: 12 }}
                 />
+                {showCI && (
+                  <Area 
+                    yAxisId="left"
+                    type="basis" 
+                    dataKey="ciUpper" 
+                    fill="url(#ciGradient)" 
+                    stroke="none"
+                    isAnimationActive={false}
+                    fillOpacity={1}
+                  />
+                )}
+                {showCI && (
+                  <Area 
+                    yAxisId="left"
+                    type="basis" 
+                    dataKey="ciLower" 
+                    fill="white" 
+                    stroke="none"
+                    isAnimationActive={false}
+                    fillOpacity={1}
+                  />
+                )}
                 {numTosses > 0 && (
                 <Line 
                   yAxisId="left"
@@ -308,7 +365,7 @@ const CoinTossSimulation: React.FC = () => {
                   dot={(props) => null}
                   isAnimationActive={false}
                 />
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>

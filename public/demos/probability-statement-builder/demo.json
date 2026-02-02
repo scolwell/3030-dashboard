@@ -1,0 +1,8 @@
+{
+  "id": "probability-statement-builder",
+  "title": "Probability Statement Builder",
+  "topic": "Probability & Distribution Intuition",
+  "description": "Build and visualize probability statements like P(X ≤ a), P(X ≥ a), or P(a ≤ X ≤ b) with automatic interpretation.",
+  "tags": ["probability", "normal distribution", "shading", "interpretation"],
+  "entry": "probability-statement-builder"
+}

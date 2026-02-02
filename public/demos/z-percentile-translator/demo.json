@@ -1,0 +1,8 @@
+{
+  "id": "z-percentile-translator",
+  "title": "z-Score & Percentile Translator",
+  "topic": "Probability & Distribution Intuition",
+  "description": "Convert between raw scores, z-scores, and percentiles while visualizing the corresponding area under the normal curve.",
+  "tags": ["z-score", "percentile", "standardization", "normal curve"],
+  "entry": "z-percentile-translator"
+}

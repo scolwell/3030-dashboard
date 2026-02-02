@@ -1,0 +1,8 @@
+{
+  "id": "build-a-normal",
+  "title": "Build-a-Normal Curve",
+  "topic": "Probability & Distribution Intuition",
+  "description": "Interactively adjust mean and standard deviation to see how they shape the normal distribution and standard deviation bands.",
+  "tags": ["normal distribution", "mean", "standard deviation", "68-95-99.7"],
+  "entry": "build-a-normal"
+}

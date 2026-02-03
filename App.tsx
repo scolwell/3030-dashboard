@@ -24,7 +24,6 @@ import {
 import { ToolType } from './types';
 import NormalCurveTool from './components/NormalCurveTool';
 import CoinTossSimulation from './components/CoinTossSimulation';
-import HypothesisTestPlaceholder from './components/HypothesisTestPlaceholder';
 import HypothesisTestTool from './components/HypothesisTestTool';
 import ProbabilityDistributionHub from './components/ProbabilityDistributionHub';
 import LawOfLargeNumbers from './components/demos/LawOfLargeNumbers';
@@ -58,7 +57,6 @@ const TOOL_META: Record<ToolType, { version: string; build: string }> = {
   [ToolType.BUILD_A_NORMAL]: { version: '1.0.0', build: '20260123.1' },
   [ToolType.Z_PERCENTILE_TRANSLATOR]: { version: '1.0.0', build: '20260123.1' },
   [ToolType.PROBABILITY_STATEMENT_BUILDER]: { version: '1.0.0', build: '20260123.1' },
-  [ToolType.HYPOTHESIS_TEST_PLACEHOLDER]: { version: '1.0.0', build: '20260123.1' },
   [ToolType.HYPOTHESIS_TEST_TOOL]: { version: '3.0.0', build: '20260123.1' },
   [ToolType.STATISTICAL_TABLES]: { version: '1.0.0', build: '20260123.1' }
 };
@@ -336,7 +334,7 @@ const App: React.FC = () => {
             <ZPercentileTranslator />
           ) : activeToolId === ToolType.PROBABILITY_STATEMENT_BUILDER ? (
             <ProbabilityStatementBuilder />
-          ) : activeToolId === ToolType.HYPOTHESIS_TEST_TOOL || activeToolId === ToolType.HYPOTHESIS_TEST_PLACEHOLDER ? (
+          ) : activeToolId === ToolType.HYPOTHESIS_TEST_TOOL ? (
             <HypothesisTestTool />
           ) : (
             <iframe 

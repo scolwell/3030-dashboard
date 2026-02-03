@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hypothesis Testing Dashboard - TSM 3030</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0066CC;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto 1fr;
+            height: calc(100vh - 40px);
+        }
+
+        .header {
+            grid-column: 1 / -1;
+            background: #004080;
+            color: white;
+            padding: 20px 30px;
+            border-bottom: 3px solid #FFB81C;
+        }
+
+        .header h1 {
+            color: white;
+            margin: 0;
+        }
+
+        .header .subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0;
+        }
+
+        .left-panel {
+            background: #f8f9fa;
+            padding: 30px;
+            overflow-y: auto;
+            border-right: 2px solid #e2e8f0;
+        }
+
+        .right-panel {
+            padding: 30px;
+            overflow-y: auto;
+            background: white;
+        }
+
+        .column-title {
+            color: #2d3748;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #FFB81C;
+        }
+
+        .logo {
+            width: 32px;
+            height: 32px;
+            background: #004080;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .subtitle {
+            color: #718096;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        .scenario-box {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid #FFB81C;
+        }
+
+        .scenario-label {
+            color: #FFB81C;
+            font-weight: 700;
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .scenario-text {
+            color: #2d3748;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-label {
+            color: #4a5568;
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .info-icon {
+            width: 16px;
+            height: 16px;
+            background: #0066CC;
+            color: white;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            cursor: help;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        select:hover {
+            border-color: #cbd5e0;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #0066CC;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+
+        .step-container {
+            margin-bottom: 25px;
+        }
+
+        .step-header {
+            background: #004080;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px 8px 0 0;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .step-number {
+            width: 24px;
+            height: 24px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .step-content {
+            background: #f7fafc;
+            padding: 16px;
+            border-radius: 0 0 8px 8px;
+            border: 2px solid #e2e8f0;
+            border-top: none;
+        }
+
+        .hypothesis-box {
+            background: white;
+            padding: 14px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 3px solid #0066CC;
+        }
+
+        .hypothesis-box:last-child {
+            margin-bottom: 0;
+            border-left-color: #FFB81C;
+        }
+
+        .hypothesis-label {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .hypothesis-text {
+            color: #4a5568;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .calculation-box {
+            background: white;
+            padding: 14px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+            color: #2d3748;
+        }
+
+        .result-box {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        .result-header {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .result-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .result-conclusion {
+            color: #4a5568;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .reject {
+            color: #e53e3e;
+        }
+
+        .fail-to-reject {
+            color: #38a169;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .metric-card {
+            background: #f7fafc;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .metric-label {
+            font-size: 11px;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .metric-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .btn-calculate {
+            width: 100%;
+            padding: 14px;
+            background: #0066CC;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 20px;
+        }
+
+        .btn-calculate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 102, 204, 0.3);
+        }
+
+        .btn-calculate:active {
+            transform: translateY(0);
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            
+            .left-panel {
+                border-right: none;
+                border-bottom: 2px solid #e2e8f0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <h1>📊 Hypothesis Testing Dashboard</h1>
+            <div class="subtitle">TSM 3030 Interactive Learning Tool</div>
+        </div>
+
+        <!-- LEFT COLUMN -->
+        <div class="left-panel">
+            <div class="column-title">Configure Test</div>
+
+            <!-- Scenario -->
+            <div class="scenario-box">
+                <div class="scenario-label">Real-World Context</div>
+                <div class="scenario-text" id="scenarioText">
+                    You're a consumer behavior analyst testing whether a new loyalty program increases repeat purchase amounts. 
+                    Historical data shows customers spend an average of $85/month. After the loyalty program, you sampled 56 
+                    customers and found they spend $91/month on average.
+                </div>
+            </div>
+
+            <!-- Scenario Selection -->
+            <div class="control-group">
+                <div class="control-label">
+                    Preset Scenario <span class="info-icon">i</span>
+                </div>
+                <select id="scenarioSelect">
+                    <option value="loyalty">Repeat Purchase Amount (Consumer Behavior)</option>
+                    <option value="training">Employee Training Effectiveness</option>
+                    <option value="marketing">Email Marketing Click Rate</option>
+                    <option value="quality">Manufacturing Quality Control</option>
+                    <option value="delivery">Delivery Time Improvement</option>
+                </select>
+            </div>
+
+            <!-- Tail Type -->
+            <div class="control-group">
+                <div class="control-label">
+                    Tail Type <span class="info-icon">i</span>
+                </div>
+                <select id="tailType">
+                    <option value="right">Right-tailed (>)</option>
+                    <option value="left">Left-tailed (<)</option>
+                    <option value="two">Two-tailed (≠)</option>
+                </select>
+            </div>
+
+            <!-- Significance Level -->
+            <div class="control-group">
+                <div class="control-label">
+                    Significance Level (α) <span class="info-icon">i</span>
+                </div>
+                <select id="alphaLevel">
+                    <option value="0.10">0.10 (10%)</option>
+                    <option value="0.05" selected>0.05 (5%)</option>
+                    <option value="0.01">0.01 (1%)</option>
+                </select>
+            </div>
+
+            <button class="btn-calculate" onclick="calculateTest()">Run Hypothesis Test</button>
+        </div>
+
+        <!-- RIGHT COLUMN -->
+        <div class="right-panel">
+            <div class="column-title">Results</div>
+            <!-- Step 1: Hypotheses -->
+            <div class="step-container">
+                <div class="step-header">
+                    <div class="step-number">1</div>
+                    <div>State Hypotheses</div>
+                </div>
+                <div class="step-content">
+                    <div class="hypothesis-box">
+                        <div class="hypothesis-label">NULL HYPOTHESIS (H₀)</div>
+                        <div class="hypothesis-text" id="h0">μ = 85</div>
+                    </div>
+                    <div class="hypothesis-box">
+                        <div class="hypothesis-label">ALTERNATIVE HYPOTHESIS (H₁)</div>
+                        <div class="hypothesis-text" id="h1">μ > 85</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Test Statistic -->
+            <div class="step-container">
+                <div class="step-header">
+                    <div class="step-number">2</div>
+                    <div>Calculate Test Statistic</div>
+                </div>
+                <div class="step-content">
+                    <div class="calculation-box" id="calculation">
+                        <div>t = (x̄ - μ₀) / (s / √n)</div>
+                        <div>t = (91 - 85) / (15 / √56)</div>
+                        <div>t = 6 / 2.00</div>
+                        <div><strong>t = 3.00</strong></div>
+                    </div>
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">Sample Mean (x̄)</div>
+                            <div class="metric-value" id="sampleMean">$91</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Population Mean (μ₀)</div>
+                            <div class="metric-value" id="popMean">$85</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Std Dev (s)</div>
+                            <div class="metric-value" id="stdDev">$15</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Sample Size (n)</div>
+                            <div class="metric-value" id="sampleSize">56</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Decision -->
+            <div class="step-container">
+                <div class="step-header">
+                    <div class="step-number">3</div>
+                    <div>Make Decision</div>
+                </div>
+                <div class="step-content">
+                    <div class="result-box">
+                        <div class="result-header">Test Result</div>
+                        <div class="result-value reject" id="decision">Reject H₀</div>
+                        <div class="result-conclusion" id="conclusion">
+                            The test statistic (t = 3.00) exceeds the critical value (t = 1.673). 
+                            There is sufficient evidence at α = 0.05 to conclude that the loyalty program 
+                            significantly increased average monthly spending.
+                        </div>
+                    </div>
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">Test Statistic</div>
+                            <div class="metric-value" id="tStat">3.00</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Critical Value</div>
+                            <div class="metric-value" id="critValue">1.673</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">P-Value</div>
+                            <div class="metric-value" id="pValue">0.002</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Degrees of Freedom</div>
+                            <div class="metric-value" id="df">55</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const scenarios = {
+            loyalty: {
+                text: "You're a consumer behavior analyst testing whether a new loyalty program increases repeat purchase amounts. Historical data shows customers spend an average of $85/month. After the loyalty program, you sampled 56 customers and found they spend $91/month on average.",
+                mu0: 85,
+                xbar: 91,
+                s: 15,
+                n: 56,
+                unit: "$",
+                defaultTail: "right"
+            },
+            training: {
+                text: "You're evaluating whether a new training program improves employee productivity. Before training, employees completed an average of 50 tasks/week. After training 40 employees, you measured an average of 54 tasks/week.",
+                mu0: 50,
+                xbar: 54,
+                s: 8,
+                n: 40,
+                unit: "",
+                defaultTail: "right"
+            },
+            marketing: {
+                text: "You're testing whether a redesigned email campaign differs from the current 12% click rate. After sending to 200 subscribers, you observed a 15% click rate.",
+                mu0: 0.12,
+                xbar: 0.15,
+                s: 0.08,
+                n: 200,
+                unit: "",
+                defaultTail: "two"
+            },
+            quality: {
+                text: "You're checking if a new manufacturing process reduces defect rate below the current 3.5%. Testing 100 units showed a 2.8% defect rate.",
+                mu0: 3.5,
+                xbar: 2.8,
+                s: 1.2,
+                n: 100,
+                unit: "%",
+                defaultTail: "left"
+            },
+            delivery: {
+                text: "You're testing whether a new routing system decreases delivery time from the current 45 minutes. Testing 75 deliveries showed an average of 42 minutes.",
+                mu0: 45,
+                xbar: 42,
+                s: 6,
+                n: 75,
+                unit: " min",
+                defaultTail: "left"
+            }
+        };
+
+        let currentScenario = scenarios.loyalty;
+
+        document.getElementById('scenarioSelect').addEventListener('change', function() {
+            currentScenario = scenarios[this.value];
+            document.getElementById('scenarioText').textContent = currentScenario.text;
+            document.getElementById('tailType').value = currentScenario.defaultTail;
+            calculateTest();
+        });
+
+        function calculateTest() {
+            const tailType = document.getElementById('tailType').value;
+            const alpha = parseFloat(document.getElementById('alphaLevel').value);
+            
+            const { mu0, xbar, s, n, unit } = currentScenario;
+            const df = n - 1;
+            
+            // Calculate test statistic
+            const se = s / Math.sqrt(n);
+            const t = (xbar - mu0) / se;
+            
+            // Get critical value (approximation)
+            const criticalValues = {
+                'right': { 0.10: 1.299, 0.05: 1.673, 0.01: 2.396 },
+                'left': { 0.10: -1.299, 0.05: -1.673, 0.01: -2.396 },
+                'two': { 0.10: 1.984, 0.05: 2.004, 0.01: 2.660 }
+            };
+            
+            const critValue = criticalValues[tailType][alpha];
+            
+            // Calculate p-value (approximation)
+            let pValue;
+            if (tailType === 'right') {
+                pValue = t > 3 ? 0.002 : (t > 2 ? 0.02 : 0.05);
+            } else if (tailType === 'left') {
+                pValue = t < -3 ? 0.002 : (t < -2 ? 0.02 : 0.05);
+            } else {
+                pValue = Math.abs(t) > 3 ? 0.004 : (Math.abs(t) > 2 ? 0.04 : 0.10);
+            }
+            
+            // Decision
+            let reject;
+            if (tailType === 'right') {
+                reject = t > critValue;
+            } else if (tailType === 'left') {
+                reject = t < critValue;
+            } else {
+                reject = Math.abs(t) > critValue;
+            }
+            
+            // Update hypotheses
+            let h0Text, h1Text;
+            if (tailType === 'right') {
+                h0Text = `μ = ${mu0}${unit}`;
+                h1Text = `μ > ${mu0}${unit}`;
+            } else if (tailType === 'left') {
+                h0Text = `μ = ${mu0}${unit}`;
+                h1Text = `μ < ${mu0}${unit}`;
+            } else {
+                h0Text = `μ = ${mu0}${unit}`;
+                h1Text = `μ ≠ ${mu0}${unit}`;
+            }
+            
+            document.getElementById('h0').textContent = h0Text;
+            document.getElementById('h1').textContent = h1Text;
+            
+            // Update calculation
+            document.getElementById('calculation').innerHTML = `
+                <div>t = (x̄ - μ₀) / (s / √n)</div>
+                <div>t = (${xbar} - ${mu0}) / (${s} / √${n})</div>
+                <div>t = ${(xbar - mu0).toFixed(2)} / ${se.toFixed(2)}</div>
+                <div><strong>t = ${t.toFixed(2)}</strong></div>
+            `;
+            
+            // Update metrics
+            document.getElementById('sampleMean').textContent = `${xbar}${unit}`;
+            document.getElementById('popMean').textContent = `${mu0}${unit}`;
+            document.getElementById('stdDev').textContent = `${s}${unit}`;
+            document.getElementById('sampleSize').textContent = n;
+            document.getElementById('tStat').textContent = t.toFixed(2);
+            document.getElementById('critValue').textContent = critValue.toFixed(3);
+            document.getElementById('pValue').textContent = pValue.toFixed(3);
+            document.getElementById('df').textContent = df;
+            
+            // Update decision
+            const decisionElem = document.getElementById('decision');
+            if (reject) {
+                decisionElem.textContent = 'Reject H₀';
+                decisionElem.className = 'result-value reject';
+                document.getElementById('conclusion').textContent = 
+                    `The test statistic (t = ${t.toFixed(2)}) ${tailType === 'two' ? 'exceeds' : (tailType === 'right' ? 'exceeds' : 'is less than')} the critical value (${critValue.toFixed(3)}). There is sufficient evidence at α = ${alpha} to support the alternative hypothesis.`;
+            } else {
+                decisionElem.textContent = 'Fail to Reject H₀';
+                decisionElem.className = 'result-value fail-to-reject';
+                document.getElementById('conclusion').textContent = 
+                    `The test statistic (t = ${t.toFixed(2)}) does not ${tailType === 'two' ? 'exceed' : (tailType === 'right' ? 'exceed' : 'fall below')} the critical value (${critValue.toFixed(3)}). There is insufficient evidence at α = ${alpha} to support the alternative hypothesis.`;
+            }
+        }
+
+        // Initialize
+        calculateTest();
+    </script>
+</body>
+</html>

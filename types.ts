@@ -2,6 +2,7 @@
 export enum ToolType {
   NORMAL_CURVE = 'normal-curve',
   SAMPLE_SIZE = 'sample-size',
+  SAMPLE_VISUALIZATION = 'sample-visualization',
   POWER_EFFECT = 'power-effect',
   ERRORS_POWER = 'errors-power',
   GALTON_BOARD = 'galton-board',

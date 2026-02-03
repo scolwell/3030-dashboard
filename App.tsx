@@ -32,6 +32,7 @@ import ZPercentileTranslator from './components/demos/ZPercentileTranslator';
 import ProbabilityStatementBuilder from './components/demos/ProbabilityStatementBuilder';
 import ConfidenceFunnelChart from './components/ConfidenceFunnelChart';
 import StatisticalTablesLookup from './components/StatisticalTablesLookup';
+import SamplingVisualization from './components/SamplingVisualization';
 
 interface Tool {
   id: ToolType;
@@ -47,6 +48,7 @@ interface Tool {
 const TOOL_META: Record<ToolType, { version: string; build: string }> = {
   [ToolType.NORMAL_CURVE]: { version: '1.0.0', build: '20260123.1' },
   [ToolType.SAMPLE_SIZE]: { version: '1.0.0', build: '20260123.1' },
+  [ToolType.SAMPLE_VISUALIZATION]: { version: '1.0.0', build: '20260123.1' },
   [ToolType.POWER_EFFECT]: { version: '1.0.0', build: '20260123.1' },
   [ToolType.ERRORS_POWER]: { version: '1.0.0', build: '20260123.1' },
   [ToolType.GALTON_BOARD]: { version: '1.0.0', build: '20260123.1' },
@@ -124,6 +126,15 @@ const App: React.FC = () => {
       url: `https://thestatisticalmind.com/sample-size-calculator/?v=${CACHE_BUSTER}`,
       version: TOOL_META[ToolType.SAMPLE_SIZE].version,
       build: TOOL_META[ToolType.SAMPLE_SIZE].build
+    },
+    { 
+      id: ToolType.SAMPLE_VISUALIZATION, 
+      name: 'Sample Visualization', 
+      icon: TrendingUp, 
+      desc: 'Visualize how sample size affects variability and standard error.',
+      url: '#',
+      version: TOOL_META[ToolType.SAMPLE_VISUALIZATION].version,
+      build: TOOL_META[ToolType.SAMPLE_VISUALIZATION].build
     },
     { 
       id: ToolType.POWER_EFFECT, 
@@ -324,6 +335,8 @@ const App: React.FC = () => {
             <NormalCurveTool />
           ) : activeToolId === ToolType.COIN_TOSS ? (
             <CoinTossSimulation />
+          ) : activeToolId === ToolType.SAMPLE_VISUALIZATION ? (
+            <SamplingVisualization />
           ) : activeToolId === ToolType.CONFIDENCE_FUNNEL_CHART ? (
             <ConfidenceFunnelChart />
           ) : activeToolId === ToolType.PROBABILITY_DISTRIBUTION_HUB ? (

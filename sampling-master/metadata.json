@@ -1,0 +1,5 @@
+{
+  "name": "Sampling Master: Statistical Simulations",
+  "description": "An interactive tool to visualize and understand common statistical sampling methods: Simple Random, Systematic, Stratified, Cluster, and Multi-stage sampling.",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,8 @@
+{
+  "demos": [
+    "/demos/law-of-large-numbers/demo.json",
+    "/demos/build-a-normal/demo.json",
+    "/demos/z-percentile-translator/demo.json",
+    "/demos/probability-statement-builder/demo.json"
+  ]
+}

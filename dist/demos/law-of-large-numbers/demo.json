@@ -1,0 +1,8 @@
+{
+  "id": "law-of-large-numbers",
+  "title": "Law of Large Numbers Simulator",
+  "topic": "Probability & Distribution Intuition",
+  "description": "Watch probability converge to its theoretical value through repeated coin tosses and Bernoulli trials.",
+  "tags": ["probability", "simulation", "convergence", "LLN"],
+  "entry": "law-of-large-numbers"
+}

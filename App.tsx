@@ -12,6 +12,7 @@ import {
   Coins,
   FlaskConical,
   Lightbulb,
+  BookOpen,
   TrendingUp,
   BarChart2,
   Percent,
@@ -26,6 +27,8 @@ import NormalCurveTool from './components/NormalCurveTool';
 import CoinTossSimulation from './components/CoinTossSimulation';
 import HypothesisTestTool from './components/HypothesisTestTool';
 import ProbabilityDistributionHub from './components/ProbabilityDistributionHub';
+import HypothesisTestingHub from './components/HypothesisTestingHub';
+import HypothesisTestStory from './components/HypothesisTestStory';
 import LawOfLargeNumbers from './components/demos/LawOfLargeNumbers';
 import BuildANormal from './components/demos/BuildANormal';
 import ZPercentileTranslator from './components/demos/ZPercentileTranslator';
@@ -55,10 +58,12 @@ const TOOL_META: Record<ToolType, { version: string; build: string }> = {
   [ToolType.COIN_TOSS]: { version: '1.0.0', build: '20260123.1' },
   [ToolType.CONFIDENCE_FUNNEL_CHART]: { version: '1.0.0', build: '20260123.1' },
   [ToolType.PROBABILITY_DISTRIBUTION_HUB]: { version: '1.0.0', build: '20260123.1' },
+  [ToolType.HYPOTHESIS_TESTING_HUB]: { version: '1.0.0', build: '20260123.1' },
   [ToolType.LAW_OF_LARGE_NUMBERS]: { version: '1.0.0', build: '20260123.1' },
   [ToolType.BUILD_A_NORMAL]: { version: '1.0.0', build: '20260123.1' },
   [ToolType.Z_PERCENTILE_TRANSLATOR]: { version: '1.0.0', build: '20260123.1' },
   [ToolType.PROBABILITY_STATEMENT_BUILDER]: { version: '1.0.0', build: '20260123.1' },
+  [ToolType.HYPOTHESIS_TEST_STORY]: { version: '1.0.0', build: '20260123.1' },
   [ToolType.HYPOTHESIS_TEST_TOOL]: { version: '3.0.0', build: '20260123.1' },
   [ToolType.STATISTICAL_TABLES]: { version: '1.0.0', build: '20260123.1' }
 };
@@ -115,6 +120,27 @@ const App: React.FC = () => {
       build: TOOL_META[ToolType.CONFIDENCE_FUNNEL_CHART].build
     },
 
+  ];
+
+  const hypothesisTestingSubmenus: Tool[] = [
+    {
+      id: ToolType.HYPOTHESIS_TEST_STORY,
+      name: 'Story of Uncertainty',
+      icon: BookOpen,
+      desc: 'A concept-first walkthrough of why we test hypotheses and what uncertainty means in practice.',
+      url: '#',
+      version: TOOL_META[ToolType.HYPOTHESIS_TEST_STORY].version,
+      build: TOOL_META[ToolType.HYPOTHESIS_TEST_STORY].build
+    },
+    {
+      id: ToolType.HYPOTHESIS_TEST_TOOL,
+      name: 'Hypothesis testing examples',
+      icon: FlaskConical,
+      desc: 'Step-by-step hypothesis testing with one-sample z-test and challenge mode.',
+      url: '#',
+      version: TOOL_META[ToolType.HYPOTHESIS_TEST_TOOL].version,
+      build: TOOL_META[ToolType.HYPOTHESIS_TEST_TOOL].build
+    }
   ];
 
   const tools: Tool[] = [
@@ -174,13 +200,14 @@ const App: React.FC = () => {
       children: probabilitySubmenus
     },
     { 
-      id: ToolType.HYPOTHESIS_TEST_TOOL, 
-      name: 'Hypothesis Testing', 
+      id: ToolType.HYPOTHESIS_TESTING_HUB, 
+      name: 'Hypo', 
       icon: FlaskConical, 
-      desc: 'Step-by-step hypothesis testing with one-sample z-test and challenge mode.',
+      desc: 'Hypothesis testing concepts and examples.',
       url: '#',
-      version: TOOL_META[ToolType.HYPOTHESIS_TEST_TOOL].version,
-      build: TOOL_META[ToolType.HYPOTHESIS_TEST_TOOL].build
+      version: TOOL_META[ToolType.HYPOTHESIS_TESTING_HUB].version,
+      build: TOOL_META[ToolType.HYPOTHESIS_TESTING_HUB].build,
+      children: hypothesisTestingSubmenus
     },
   ];
 
@@ -248,13 +275,16 @@ const App: React.FC = () => {
               <div key={tool.id}>
                 <button
                   onClick={() => {
-                    setActiveToolId(tool.id);
                     if (tool.children) {
+                      // For tools with children, only toggle the menu expansion
                       setExpandedMenuId(expandedMenuId === tool.id ? null : tool.id);
+                    } else {
+                      // For tools without children, set as active
+                      setActiveToolId(tool.id);
                     }
                   }}
                   className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition ${
-                    activeToolId === tool.id 
+                    activeToolId === tool.id && !tool.children
                       ? 'text-indigo-700 bg-indigo-50 border-2 border-indigo-600' 
                       : 'text-gray-700 hover:bg-gray-50'
                   }`}
@@ -341,12 +371,16 @@ const App: React.FC = () => {
             <ConfidenceFunnelChart />
           ) : activeToolId === ToolType.PROBABILITY_DISTRIBUTION_HUB ? (
             <ProbabilityDistributionHub onNavigate={setActiveToolId} />
+          ) : activeToolId === ToolType.HYPOTHESIS_TESTING_HUB ? (
+            <HypothesisTestingHub onNavigate={setActiveToolId} />
           ) : activeToolId === ToolType.BUILD_A_NORMAL ? (
             <BuildANormal />
           ) : activeToolId === ToolType.Z_PERCENTILE_TRANSLATOR ? (
             <ZPercentileTranslator />
           ) : activeToolId === ToolType.PROBABILITY_STATEMENT_BUILDER ? (
             <ProbabilityStatementBuilder />
+          ) : activeToolId === ToolType.HYPOTHESIS_TEST_STORY ? (
+            <HypothesisTestStory />
           ) : activeToolId === ToolType.HYPOTHESIS_TEST_TOOL ? (
             <HypothesisTestTool />
           ) : (

@@ -185,29 +185,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center py-8 px-4 sm:px-8 lg:px-12 bg-slate-50">
-      <header className="max-w-7xl w-full flex flex-col md:flex-row items-center justify-between mb-16 gap-8">
-        <div className="text-center md:text-left">
-          <h1 className="text-5xl font-black text-slate-900 tracking-tighter leading-none mb-2">
-            The Uncertainty <span className="text-blue-600">Story</span>
-          </h1>
-          <p className="text-slate-500 font-semibold tracking-wide uppercase text-[11px]">From Variability to Decisions Under Uncertainty</p>
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={backToStart}
-            disabled={state.currentStep === 0}
-            className="px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-wider text-slate-600 bg-white border-2 border-slate-200 hover:border-slate-300 disabled:opacity-30 transition-all active:scale-95"
-          >
-            <i className="fas fa-home mr-2"></i>Start
-          </button>
-          <button
-            onClick={resetStory}
-            className="px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-wider text-slate-600 bg-white border-2 border-slate-200 hover:border-slate-300 transition-all active:scale-95"
-          >
-            <i className="fas fa-rotate-right mr-2"></i>Reset
-          </button>
-        </div>
-      </header>
+      <header className="max-w-7xl w-full flex flex-col md:flex-row items-center justify-between mb-16 gap-8" />
 
       <main className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch animate-in fade-in duration-700">
         <div className="lg:col-span-5">
@@ -233,7 +211,22 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-auto pt-8 flex items-center justify-between">
+            <div className="mt-auto pt-6 flex items-center justify-between">
+              <div className="flex gap-3">
+                <button
+                  onClick={backToStart}
+                  disabled={state.currentStep === 0}
+                  className="px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-wider text-slate-600 bg-white border-2 border-slate-200 hover:border-slate-300 disabled:opacity-30 transition-all active:scale-95"
+                >
+                  <i className="fas fa-home mr-2"></i>Start
+                </button>
+                <button
+                  onClick={resetStory}
+                  className="px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-wider text-slate-600 bg-white border-2 border-slate-200 hover:border-slate-300 transition-all active:scale-95"
+                >
+                  <i className="fas fa-rotate-right mr-2"></i>Reset
+                </button>
+              </div>
               <button 
                 onClick={prevStep} 
                 disabled={state.currentStep === 0}
@@ -245,7 +238,7 @@ const App: React.FC = () => {
               <button 
                 onClick={nextStep} 
                 disabled={state.currentStep === STORY_STEPS.length - 1} 
-                className="flex items-center gap-4 px-12 py-5 rounded-[2rem] font-black bg-blue-600 text-white hover:bg-blue-700 shadow-2xl shadow-blue-200 disabled:bg-slate-200 disabled:text-slate-400 transition-all hover:scale-105 active:scale-95 group"
+                className="flex items-center gap-3 px-8 py-4 rounded-[1.5rem] font-black bg-blue-600 text-white hover:bg-blue-700 shadow-xl shadow-blue-200 disabled:bg-slate-200 disabled:text-slate-400 transition-all hover:scale-105 active:scale-95 group"
               >
                 {state.currentStep === STORY_STEPS.length - 1 ? 'End' : 'Continue'}
                 <i className="fas fa-chevron-right text-xs group-hover:translate-x-1 transition-transform"></i>

@@ -201,7 +201,7 @@ const App: React.FC = () => {
     },
     { 
       id: ToolType.HYPOTHESIS_TESTING_HUB, 
-      name: 'Hypo', 
+      name: 'Hypothesis Testing', 
       icon: FlaskConical, 
       desc: 'Hypothesis testing concepts and examples.',
       url: '#',

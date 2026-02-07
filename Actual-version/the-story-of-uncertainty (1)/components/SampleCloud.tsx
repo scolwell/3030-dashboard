@@ -4,6 +4,9 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 interface Props {
   onSampleDrawn?: (mean: number) => void;
   highlightSample: boolean;
+  popMean: number;
+  popStdDev: number;
+  sampleSize: number;
 }
 
 const COLORS = [
@@ -14,24 +17,27 @@ const COLORS = [
   { name: 'Slate', bg: 'bg-slate-400', range: 'Laggards' },
 ];
 
-const SampleCloud: React.FC<Props> = ({ onSampleDrawn, highlightSample }) => {
-  const populationSize = 250; 
-  const sampleSize = 30;
+const SampleCloud: React.FC<Props> = ({ onSampleDrawn, highlightSample, popMean, popStdDev, sampleSize }) => {
+  const populationSize = 250;
   const timerRef = useRef<number | null>(null);
 
   const { population, truePopMean } = useMemo(() => {
     const dots = [];
     let totalSum = 0;
-    for (let i = 0; i < 5; i++) {
-      const baseVal = 30 + i * 10; 
-      for (let j = 0; j < 50; j++) {
+    const groupCount = 5;
+    const dotsPerGroup = populationSize / groupCount;
+    
+    for (let i = 0; i < groupCount; i++) {
+      // Distribute around popMean using Box-Muller transform
+      const baseVal = popMean - 2 * popStdDev + i * (popStdDev); 
+      for (let j = 0; j < dotsPerGroup; j++) {
         const u1 = Math.random();
         const u2 = Math.random();
         const z = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
-        const val = baseVal + z * 3; 
+        const val = baseVal + z * (popStdDev * 0.8); 
         
         dots.push({
-          id: i * 50 + j,
+          id: i * dotsPerGroup + j,
           val,
           colorIndex: i,
           x: Math.random() * 92 + 4,
@@ -41,7 +47,7 @@ const SampleCloud: React.FC<Props> = ({ onSampleDrawn, highlightSample }) => {
       }
     }
     return { population: dots, truePopMean: totalSum / populationSize };
-  }, []);
+  }, [popMean, popStdDev, populationSize]);
 
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   const [isSampling, setIsSampling] = useState(false);

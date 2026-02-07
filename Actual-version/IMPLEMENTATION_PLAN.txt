@@ -1,0 +1,960 @@
+================================================================================
+IMPLEMENTATION PLAN: "THE STORY OF UNCERTAINTY" - OPTION B FULL REWRITE
+================================================================================
+
+OVERVIEW
+--------
+Transform from hypothesis testing tutorial into foundational uncertainty tutorial.
+Keep all existing infrastructure, add 5 new foundational chapters, restructure flow.
+
+Timeline: 3-4 weeks
+Difficulty: Moderate (you have the infrastructure, just need new content)
+Result: A genuinely unique educational resource
+
+
+================================================================================
+PHASE 1: PLANNING & STRUCTURE (1-2 days)
+================================================================================
+
+STEP 1.1: DEFINE THE NEW CHAPTER ARC
+-------------------------------------
+
+Create a new file: NEW_STORY_STRUCTURE.md
+
+Content outline:
+
+CHAPTER 1: THE UNCERTAIN WORLD (NEW)
+    Core Question: Why can't we know things perfectly?
+    Learning Objective: Students recognize uncertainty is fundamental, not a flaw
+    Key Concepts: Measurement error, natural variability, incomplete information
+    Interactive: Repeated measurements showing different results
+    Steps: 3-4
+
+CHAPTER 2: TWO FLAVORS OF UNCERTAINTY (NEW)
+    Core Question: Where does uncertainty come from?
+    Learning Objective: Distinguish aleatory vs epistemic uncertainty
+    Key Concepts: Dice vs hidden coins, irreducible vs reducible uncertainty
+    Interactive: Side-by-side comparison of random process vs hidden information
+    Steps: 3-4
+
+CHAPTER 3: QUANTIFYING UNCERTAINTY (NEW)
+    Core Question: How do we measure how uncertain we are?
+    Learning Objective: Understand variance, SD, standard error
+    Key Concepts: Spread, variability, precision vs accuracy
+    Interactive: Adjust sample size and watch standard error change
+    Steps: 3-4
+
+CHAPTER 4: THE CENTRAL LIMIT THEOREM (NEW)
+    Core Question: Why do sample means behave so predictably?
+    Learning Objective: Understand why sampling distributions are normal
+    Key Concepts: CLT, sampling distribution, law of large numbers
+    Interactive: Simulation showing CLT with non-normal population
+    Steps: 3-4
+
+CHAPTER 5: COMMUNICATING UNCERTAINTY (NEW)
+    Core Question: How do we express doubt about our estimates?
+    Learning Objective: Build and interpret confidence intervals
+    Key Concepts: Point estimates vs intervals, confidence level, margin of error
+    Interactive: Build confidence intervals from repeated samples
+    Steps: 3-4
+
+CHAPTER 6: LEARNING FROM SAMPLES (KEEP - MODIFY EXISTING)
+    Core Question: How do we learn from incomplete information?
+    Learning Objective: Understand representative sampling
+    Key Concepts: Random sampling, bias, representativeness
+    Interactive: Your existing sample extraction visual
+    Steps: 2-3
+
+CHAPTER 7: MAKING DECISIONS UNDER UNCERTAINTY (RESTRUCTURE EXISTING)
+    Core Question: When we must act, how do we decide?
+    Learning Objective: Understand hypothesis testing as ONE decision framework
+    Key Concepts: Null hypothesis, alpha, p-values, Type I/II errors
+    Interactive: Your existing hypothesis testing visuals
+    Steps: 8-10 (most of your current content)
+
+CHAPTER 8: BEYOND BINARY THINKING (NEW)
+    Core Question: What matters more than statistical significance?
+    Learning Objective: Effect sizes, practical significance, modern approaches
+    Key Concepts: Cohen's d, CIs over p-values, reporting uncertainty
+    Interactive: Show same p-value with different effect sizes
+    Steps: 2-3
+
+Total: 30-35 steps (currently have 11)
+
+
+STEP 1.2: MAP EXISTING CONTENT TO NEW STRUCTURE
+------------------------------------------------
+
+Create a file: CONTENT_MAPPING.md
+
+WHAT TO KEEP (Current Steps → New Chapters):
+    Current Step 0 (Extracting Sample) → Chapter 6, Step 1
+    Current Step 1 (What if Different) → Chapter 7, Step 1
+    Current Step 2 (Null Hypothesis) → Chapter 7, Step 2
+    Current Step 3 (Logic of Null) → Chapter 7, Step 3
+    Current Step 4 (Normal Curve) → Move to Chapter 4 (after CLT)
+    Current Steps 5-10 → Chapter 7, Steps 4-10
+
+WHAT TO CREATE (New):
+    Chapter 1: 3-4 steps
+    Chapter 2: 3-4 steps
+    Chapter 3: 3-4 steps
+    Chapter 4: 3-4 steps
+    Chapter 5: 3-4 steps
+    Chapter 8: 2-3 steps
+
+WHAT TO MODIFY:
+    All existing content: Remove "proof" language
+    Add confidence intervals
+    Soften binary reject/fail-to-reject framing
+    Add effect size discussions
+
+
+================================================================================
+PHASE 2: CREATE NEW VISUAL COMPONENTS (Week 1-2)
+================================================================================
+
+STEP 2.1: CHAPTER 1 - MEASUREMENT ERROR VISUALIZATION
+------------------------------------------------------
+
+Create: components/MeasurementError.tsx
+
+Purpose: Show the SAME object measured multiple times with different results
+
+Visual Design:
+    - A simple object (line with "true length" marked)
+    - Measurement tool (ruler or caliper)
+    - "Measure Again" button
+    - History of measurements displayed as dots on number line
+    - Running mean updates with each measurement
+    - True value shown as vertical line
+
+Key Insight: Even perfect instruments have uncertainty
+
+Technical Requirements:
+    interface Props {
+      trueValue: number;
+      measurementError: number;  // standard deviation of measurement noise
+      onMeasure: (value: number) => void;
+    }
+
+Implementation Notes:
+    - Generate measurement: trueValue + normal(0, measurementError)
+    - Store history of measurements
+    - Display mean of measurements converging to true value
+    - Color code: dots cluster around truth but vary
+
+
+STEP 2.2: CHAPTER 2 - ALEATORY VS EPISTEMIC
+--------------------------------------------
+
+Create: components/UncertaintyTypes.tsx
+
+Purpose: Contrast true randomness vs hidden information
+
+Visual Design:
+    Split screen:
+    
+    LEFT SIDE - ALEATORY:
+        - Die (can be rolled)
+        - "Roll Die" button
+        - History of rolls
+        - Probability distribution (uniform 1-6)
+        - Text: "Truly random - no pattern"
+    
+    RIGHT SIDE - EPISTEMIC:
+        - Covered coin
+        - "Peek at Coin" button (reveals it was always heads/tails)
+        - Multiple "Flip" attempts before peeking
+        - Text: "Determined but hidden"
+
+Key Insight: Some uncertainty is irreducible (die), some is just missing info (coin)
+
+Technical Requirements:
+    interface Props {
+      onRollDie: () => void;
+      onPeekCoin: () => void;
+    }
+
+Implementation Notes:
+    - Die: Generate random 1-6 on each roll
+    - Coin: Determine outcome once at start, hide until peek
+    - After peek, show "the coin was ALWAYS heads" message
+
+
+STEP 2.3: CHAPTER 3 - STANDARD ERROR EXPLORER
+----------------------------------------------
+
+Create: components/StandardErrorExplorer.tsx
+
+Purpose: Show SE = σ/√n visually
+
+Visual Design:
+    Top Panel:
+        - Population distribution (wide bell curve)
+        - Label: "Population σ = 10"
+    
+    Middle Panel:
+        - Sample size slider (n = 5 to 100)
+        - Current sample size displayed prominently
+    
+    Bottom Panel:
+        - Sampling distribution of means (narrowing bell curve)
+        - Overlay showing SE shrinks as n increases
+        - Formula displayed: SE = σ/√n = 10/√30 = 1.83
+    
+    Animation:
+        - As slider moves, watch bottom distribution narrow
+        - Sample dots cluster tighter
+        - Formula updates in real-time
+
+Key Insight: Larger samples give more precise estimates
+
+Technical Requirements:
+    interface Props {
+      populationSD: number;
+      sampleSize: number;
+      onSampleSizeChange: (n: number) => void;
+    }
+
+Implementation Notes:
+    - Top distribution: mean=50, sd=populationSD
+    - Bottom distribution: mean=50, sd=populationSD/sqrt(sampleSize)
+    - Use your existing NormalDistribution component
+    - Add formula overlay that updates
+
+
+STEP 2.4: CHAPTER 4 - CLT DEMONSTRATION
+----------------------------------------
+
+Create: components/CLTSimulation.tsx
+
+Purpose: Show Central Limit Theorem with non-normal population
+
+Visual Design:
+    Top Section - Population:
+        - Dropdown to select shape: [Uniform, Exponential, Bimodal, Heavily Skewed]
+        - Display chosen population distribution
+        - Label: "Population (NOT normal)"
+    
+    Middle Section - Controls:
+        - Sample size slider (n = 5, 10, 30, 100)
+        - "Draw 1000 samples" button
+        - Progress bar during simulation
+    
+    Bottom Section - Sampling Distribution:
+        - Histogram of sample means
+        - Overlay theoretical normal curve
+        - Gets more normal as n increases!
+        - Label: "Distribution of Sample Means (becomes normal!)"
+
+Key Insight: Sample means are normal even when population is not
+
+Technical Requirements:
+    interface Props {
+      populationShape: 'uniform' | 'exponential' | 'bimodal' | 'skewed';
+      sampleSize: number;
+      numSamples: number;
+      onSimulate: () => void;
+    }
+
+Implementation Notes:
+    - Generate population based on shape
+    - Draw numSamples samples of size sampleSize
+    - Calculate mean of each sample
+    - Plot histogram of those means
+    - Overlay normal(μ, σ/√n)
+    - Watch it converge as n increases
+
+
+STEP 2.5: CHAPTER 5 - CONFIDENCE INTERVAL BUILDER
+--------------------------------------------------
+
+Create: components/ConfidenceIntervalBuilder.tsx
+
+Purpose: Build 100 CIs and show ~95 contain the true mean
+
+Visual Design:
+    Left Panel:
+        - Vertical line for true population mean μ
+        - Label: "True μ = 50"
+    
+    Center Panel:
+        - 100 horizontal confidence intervals
+        - Green if interval contains μ
+        - Red if interval misses μ
+        - Intervals displayed as horizontal lines with error bars
+    
+    Right Panel:
+        - Counter: "94 out of 100 intervals contain μ"
+        - Percentage: "94%"
+        - Confidence level slider (90%, 95%, 99%)
+    
+    Bottom:
+        - "Draw 100 New Samples" button
+        - Sample size control
+        - Watch percentage hover around confidence level
+
+Key Insight: CIs capture the true value X% of the time, not "X% probability μ is in this interval"
+
+Technical Requirements:
+    interface Props {
+      populationMean: number;
+      populationSD: number;
+      sampleSize: number;
+      confidenceLevel: number;  // 0.90, 0.95, 0.99
+    }
+
+Implementation Notes:
+    - Draw 100 samples
+    - For each: calculate mean and CI
+    - Check if CI contains populationMean
+    - Color code and count
+    - Critical value from normal: 1.645 (90%), 1.96 (95%), 2.576 (99%)
+
+
+STEP 2.6: CHAPTER 8 - EFFECT SIZE MATTERS
+------------------------------------------
+
+Create: components/EffectSizeComparison.tsx
+
+Purpose: Show same p-value with different effect sizes
+
+Visual Design:
+    Side-by-side comparison:
+    
+    LEFT - "Statistically Significant but Tiny":
+        - Two distributions barely separated
+        - Means: 50.0 vs 50.2
+        - Sample size: n = 10,000
+        - p-value: 0.03 (significant!)
+        - Cohen's d: 0.02 (trivial)
+        - Label: "Who cares?"
+    
+    RIGHT - "Meaningful Difference":
+        - Two distributions well separated
+        - Means: 50.0 vs 54.0
+        - Sample size: n = 30
+        - p-value: 0.04 (also significant!)
+        - Cohen's d: 0.8 (large)
+        - Label: "This matters!"
+    
+    Bottom Message:
+        "Both are 'statistically significant' (p < 0.05).
+         Which would you act on?"
+
+Key Insight: Statistical significance ≠ practical importance
+
+Technical Requirements:
+    interface Props {
+      scenario: 'tiny' | 'large';
+    }
+
+Implementation Notes:
+    - Display two overlapping distributions
+    - Show separation between means
+    - Display both p-value and Cohen's d
+    - Make it obvious that p-value alone is insufficient
+
+
+================================================================================
+PHASE 3: WRITE NEW CONTENT (Week 2-3)
+================================================================================
+
+STEP 3.1: UPDATE constants.ts WITH COMPLETE NEW STORY
+------------------------------------------------------
+
+I'm providing full content for all chapters below.
+
+Replace your STORY_STEPS array with this complete version:
+
+
+// ====================
+// CHAPTER 1: THE UNCERTAIN WORLD
+// ====================
+
+{
+  id: 0,
+  chapterNumber: 1,
+  title: "Nothing Is Exact",
+  content: "Every measurement we make is uncertain. Every observation contains error. This isn't a failure—it's the nature of reality.",
+  details: "When you measure the length of a table twice, you get two different numbers. When you weigh yourself on different scales, the numbers differ. Even with perfect instruments, measurement contains uncertainty. This is fundamental.",
+  visualType: 'measurement-error'
+},
+
+{
+  id: 1,
+  chapterNumber: 1,
+  title: "Variability Is Everywhere",
+  content: "Even identical objects behave differently. Even controlled experiments produce varying results. Nature itself is variable.",
+  details: "Two plants with the same genes, same soil, same light still grow differently. Manufacturing produces 'identical' parts with tiny variations. In biology, physics, chemistry—variability is the norm, not the exception.",
+  visualType: 'natural-variability'
+},
+
+{
+  id: 2,
+  chapterNumber: 1,
+  title: "Our Knowledge Has Limits",
+  content: "We cannot observe everything. We cannot measure infinitely precisely. We must make inferences from incomplete information.",
+  details: "We want to know the average height of all humans, but we can only measure a sample. We want to predict tomorrow's weather, but cannot observe every air molecule. Uncertainty follows from incomplete knowledge.",
+  visualType: 'incomplete-info'
+},
+
+
+// ====================
+// CHAPTER 2: TWO FLAVORS OF UNCERTAINTY
+// ====================
+
+{
+  id: 3,
+  chapterNumber: 2,
+  title: "Aleatory Uncertainty",
+  content: "Some uncertainty is irreducible. Quantum mechanics, radioactive decay, and fair dice are fundamentally random.",
+  details: "When you roll a fair die, the outcome is not predetermined. No amount of information about initial conditions will tell you the result. This is aleatory uncertainty—inherent randomness in the process itself.",
+  visualType: 'aleatory'
+},
+
+{
+  id: 4,
+  chapterNumber: 2,
+  title: "Epistemic Uncertainty",
+  content: "Some uncertainty comes from missing information. If we knew more, the uncertainty would vanish.",
+  details: "A flipped coin is rotating through the air. Its final state is already determined by physics—we just don't know it yet. This is epistemic uncertainty. More knowledge reduces it; perfect knowledge eliminates it.",
+  visualType: 'epistemic'
+},
+
+{
+  id: 5,
+  chapterNumber: 2,
+  title: "Why the Distinction Matters",
+  content: "Aleatory uncertainty cannot be reduced. Epistemic uncertainty can be reduced with better data, better models, better instruments.",
+  details: "You cannot predict a single die roll better, no matter how much you learn. But you CAN reduce uncertainty about population means by collecting larger samples. Knowing which type of uncertainty you face changes your strategy.",
+  visualType: 'uncertainty-comparison'
+},
+
+
+// ====================
+// CHAPTER 3: QUANTIFYING UNCERTAINTY
+// ====================
+
+{
+  id: 6,
+  chapterNumber: 3,
+  title: "Measuring Spread",
+  content: "To quantify uncertainty, we measure how much values vary. Standard deviation (σ) measures spread in the population.",
+  details: "If heights of adults have σ = 10cm, most people are within 10cm of the average. Large σ means high variability. Small σ means values cluster tightly. This describes the population's inherent spread.",
+  visualType: 'standard-deviation'
+},
+
+{
+  id: 7,
+  chapterNumber: 3,
+  title: "Uncertainty About Estimates",
+  content: "When we estimate the mean from a sample, our estimate itself is uncertain. This is measured by standard error (SE).",
+  details: "Standard error tells us how much our sample mean might differ from the true population mean. It's not about the spread of individuals—it's about the precision of our estimate.",
+  visualType: 'standard-error-intro'
+},
+
+{
+  id: 8,
+  chapterNumber: 3,
+  title: "The Relationship: SE = σ/√n",
+  content: "Standard error shrinks as sample size grows. Larger samples give more precise estimates of the population mean.",
+  details: "With n=10, SE is large—our estimate is imprecise. With n=100, SE is smaller—we're more confident. With n=1000, SE is tiny—we know the population mean quite precisely. Uncertainty decreases with information.",
+  visualType: 'standard-error-explorer'
+},
+
+
+// ====================
+// CHAPTER 4: THE CENTRAL LIMIT THEOREM
+// ====================
+
+{
+  id: 9,
+  chapterNumber: 4,
+  title: "A Remarkable Pattern",
+  content: "When you take many samples and calculate their means, something magical happens: those means follow a normal distribution.",
+  details: "This is true even if the population itself is NOT normal. Uniform, skewed, bimodal—doesn't matter. Sample means become normal as sample size increases. This is the Central Limit Theorem.",
+  visualType: 'clt-intro'
+},
+
+{
+  id: 10,
+  chapterNumber: 4,
+  title: "Seeing the CLT in Action",
+  content: "Let's prove it. We'll sample from a highly skewed population. Watch what happens to the distribution of sample means.",
+  details: "The population is extremely skewed—nothing like a bell curve. But when we take samples of size 30 and plot their means, we get a beautiful normal distribution. This is the foundation of statistical inference.",
+  visualType: 'clt-simulation'
+},
+
+{
+  id: 11,
+  chapterNumber: 4,
+  title: "Why the CLT Matters",
+  content: "The CLT lets us make probabilistic statements about sample means, even when we know nothing about the population's shape.",
+  details: "This is why we can use normal-based methods (z-tests, t-tests, confidence intervals) for almost any problem with sufficient sample size. The CLT is the reason statistical inference works.",
+  visualType: 'clt-implications'
+},
+
+
+// ====================
+// CHAPTER 5: COMMUNICATING UNCERTAINTY
+// ====================
+
+{
+  id: 12,
+  chapterNumber: 5,
+  title: "Point Estimates Are Incomplete",
+  content: "Reporting a single number (like 'the mean is 52.3') hides the uncertainty. We need to communicate how uncertain we are.",
+  details: "Saying 'the mean is 52.3' suggests precision we don't have. A better approach: 'the mean is 52.3, ± 2.1'. This acknowledges uncertainty explicitly.",
+  visualType: 'point-vs-interval'
+},
+
+{
+  id: 13,
+  chapterNumber: 5,
+  title: "Building Confidence Intervals",
+  content: "A confidence interval gives a range of plausible values for the population parameter.",
+  details: "A 95% confidence interval is constructed so that if we repeated this sampling process many times, 95% of intervals would contain the true population mean. It's about the long-run behavior of the method, not this specific interval.",
+  visualType: 'ci-construction'
+},
+
+{
+  id: 14,
+  chapterNumber: 5,
+  title: "What CIs Do and Don't Mean",
+  content: "Common misconception: 'There's a 95% probability the true mean is in this interval.' Wrong. The interval either contains it or doesn't.",
+  details: "The correct interpretation: 'If we used this procedure many times, 95% of the intervals we construct would contain the true mean.' The probability is about the method's long-run performance, not about this particular interval.",
+  visualType: 'ci-interpretation'
+},
+
+{
+  id: 15,
+  chapterNumber: 5,
+  title: "Seeing It Happen",
+  content: "Let's build 100 confidence intervals from different samples. Watch how many capture the true population mean.",
+  details: "Each line is a 95% CI from a different sample. Green intervals contain the true mean; red ones miss it. Over many samples, about 95 out of 100 intervals succeed. This is what 'confidence' means.",
+  visualType: 'ci-builder'
+},
+
+
+// ====================
+// CHAPTER 6: LEARNING FROM SAMPLES
+// ====================
+
+{
+  id: 16,
+  chapterNumber: 6,
+  title: "Representative Sampling",
+  content: "Since we cannot measure the whole population, we extract a representative sample and make inferences.",
+  details: "Random sampling ensures our sample is not systematically biased. Each member of the population has an equal chance of being selected. This is the foundation of statistical inference—learning about the whole from a part.",
+  visualType: 'sample'
+},
+
+{
+  id: 17,
+  chapterNumber: 6,
+  title: "Sample to Population",
+  content: "Our sample mean (x̄) is our best estimate of the population mean (μ). But it's just an estimate—there's uncertainty.",
+  details: "The sample mean is rarely exactly equal to the population mean. The question is: how far off might we be? This is where standard error and confidence intervals come in.",
+  visualType: 'sample-on-dist'
+},
+
+
+// ====================
+// CHAPTER 7: MAKING DECISIONS UNDER UNCERTAINTY
+// ====================
+
+{
+  id: 18,
+  chapterNumber: 7,
+  title: "When We Must Decide",
+  content: "Sometimes we need to make a yes/no decision despite uncertainty. Should we approve this drug? Has the policy worked? Is this system better?",
+  details: "Confidence intervals tell us a range of plausible values, but decisions often require action. Hypothesis testing provides one framework for making decisions under uncertainty.",
+  visualType: 'comparison'
+},
+
+{
+  id: 19,
+  chapterNumber: 7,
+  title: "The Null Hypothesis",
+  content: "We start by assuming the status quo—that nothing has changed, no effect exists, no difference is present.",
+  details: "The Null Hypothesis (H₀) is our starting assumption of skepticism. We assume any observed difference is just random variation until we have strong evidence otherwise. This is scientific conservatism.",
+  visualType: 'sample-on-dist'
+},
+
+{
+  id: 20,
+  chapterNumber: 7,
+  title: "The Logic of Hypothesis Testing",
+  content: "We never prove the null is true. We only ask: is our data surprising enough to reject the null?",
+  details: "Think of it like a courtroom. We don't prove innocence; we only decide if there's enough evidence to reject innocence. Statistical tests either 'reject H₀' or 'fail to reject H₀'—never 'accept H₀'.",
+  visualType: 'logic'
+},
+
+{
+  id: 21,
+  chapterNumber: 7,
+  title: "The Sampling Distribution Under H₀",
+  content: "If the null hypothesis were true, our sample means would follow this distribution. This is the 'map of the expected'.",
+  details: "The sampling distribution shows us what results we'd expect if H₀ were true. Most results fall in the center. Extreme results are rare. This lets us ask: is our observed result 'normal' or 'surprising'?",
+  visualType: 'distribution'
+},
+
+{
+  id: 22,
+  chapterNumber: 7,
+  title: "Setting a Decision Rule",
+  content: "We must decide our 'surprise threshold'—how rare does a result need to be before we reject the null?",
+  details: "Alpha (α) is our threshold. Common choice: α = 0.05. This means we'll only reject H₀ if our result would occur less than 5% of the time under the null. It's a balance between being too quick to claim discoveries and too slow to detect real effects.",
+  visualType: 'threshold'
+},
+
+{
+  id: 23,
+  chapterNumber: 7,
+  title: "The Rejection Region",
+  content: "Our threshold defines critical regions—the tails where results are 'too extreme' to be attributed to chance alone.",
+  details: "If our result falls in the red tails, we consider it statistically significant. We reject H₀ and conclude the observed difference is unlikely to be just random variation.",
+  visualType: 'threshold'
+},
+
+{
+  id: 24,
+  chapterNumber: 7,
+  title: "The P-Value",
+  content: "The p-value measures how surprising our result is under the null hypothesis. It's the probability of seeing a result this extreme (or more) if H₀ were true.",
+  details: "Small p-value = surprising result = evidence against H₀. Large p-value = unsurprising result = insufficient evidence against H₀. If p < α, we reject the null. But remember: p-values don't tell us the probability H₀ is true.",
+  visualType: 'conclusion'
+},
+
+{
+  id: 25,
+  chapterNumber: 7,
+  title: "The Risk of Errors",
+  content: "Every decision under uncertainty carries risk. We might reject a true null (Type I error) or fail to reject a false null (Type II error).",
+  details: "Type I error: False alarm—claiming an effect that doesn't exist. Type II error: Missed discovery—failing to detect a real effect. Alpha controls Type I error rate. These errors are inevitable when making decisions with incomplete information.",
+  visualType: 'errors'
+},
+
+{
+  id: 26,
+  chapterNumber: 7,
+  title: "When We Reject the Null",
+  content: "Rejecting H₀ means we support the alternative hypothesis (Hₐ)—that there IS an effect, IS a difference, IS a change.",
+  details: "But 'support' is not 'proof'. We've simply gathered enough evidence to move away from skepticism. In science, conclusions are always provisional, always open to revision with new evidence.",
+  visualType: 'alternative'
+},
+
+
+// ====================
+// CHAPTER 8: BEYOND BINARY THINKING
+// ====================
+
+{
+  id: 27,
+  chapterNumber: 8,
+  title: "Statistical vs Practical Significance",
+  content: "A result can be 'statistically significant' yet meaningless in practice. Significance depends on sample size, not just effect size.",
+  details: "With huge samples, even tiny, trivial differences become 'significant'. With small samples, even large, important differences might not reach significance. The p-value alone doesn't tell us if something matters.",
+  visualType: 'effect-size-comparison'
+},
+
+{
+  id: 28,
+  chapterNumber: 8,
+  title: "Effect Sizes Tell the Story",
+  content: "Effect size measures the magnitude of difference, independent of sample size. This is what actually matters for decision-making.",
+  details: "Cohen's d, correlation coefficients, mean differences—these tell us 'how much' of an effect exists. A small p-value with a tiny effect size means 'we're confident there's an effect, but it's negligible'. This changes how we interpret results.",
+  visualType: 'effect-size-education'
+},
+
+{
+  id: 29,
+  chapterNumber: 8,
+  title: "Modern Reporting Standards",
+  content: "Best practices today: Report effect sizes and confidence intervals, not just p-values. Focus on estimation, not just testing.",
+  details: "Instead of 'p = 0.03, therefore significant', report: 'Mean difference = 3.2 points, 95% CI [0.5, 5.9], Cohen's d = 0.6'. This tells a complete story: the size of the effect, the uncertainty, and the practical importance.",
+  visualType: 'modern-reporting'
+},
+
+{
+  id: 30,
+  chapterNumber: 8,
+  title: "The Story of Uncertainty",
+  content: "We've learned that uncertainty is fundamental, quantifiable, and manageable—but never eliminable.",
+  details: "Statistical inference is not about finding truth—it's about making rational decisions despite irreducible uncertainty. We measure it, we communicate it, we manage it. And we acknowledge that every conclusion is provisional, every estimate is uncertain, and every decision is a calculated bet against the unknown.",
+  visualType: 'conclusion'
+},
+
+
+STEP 3.2: UPDATE visualType MAPPING IN App.tsx
+-----------------------------------------------
+
+You'll need to update the renderVisual function to handle new visual types.
+
+In App.tsx, update the switch statement:
+
+case 'measurement-error':
+  return <MeasurementError ... />;
+
+case 'aleatory':
+  return <UncertaintyTypes mode="aleatory" ... />;
+
+case 'epistemic':
+  return <UncertaintyTypes mode="epistemic" ... />;
+
+case 'standard-error-explorer':
+  return <StandardErrorExplorer ... />;
+
+case 'clt-simulation':
+  return <CLTSimulation ... />;
+
+case 'ci-builder':
+  return <ConfidenceIntervalBuilder ... />;
+
+case 'effect-size-comparison':
+  return <EffectSizeComparison ... />;
+
+// Keep all your existing cases for chapter 7
+
+
+STEP 3.3: UPDATE types.ts
+--------------------------
+
+Add new visual types to your StoryStep interface:
+
+type VisualType = 
+  | 'sample'
+  | 'sample-on-dist'
+  | 'comparison'
+  | 'logic'
+  | 'distribution'
+  | 'threshold'
+  | 'conclusion'
+  | 'errors'
+  | 'alternative'
+  | 'measurement-error'        // NEW
+  | 'natural-variability'       // NEW
+  | 'incomplete-info'           // NEW
+  | 'aleatory'                  // NEW
+  | 'epistemic'                 // NEW
+  | 'uncertainty-comparison'    // NEW
+  | 'standard-deviation'        // NEW
+  | 'standard-error-intro'      // NEW
+  | 'standard-error-explorer'   // NEW
+  | 'clt-intro'                 // NEW
+  | 'clt-simulation'            // NEW
+  | 'clt-implications'          // NEW
+  | 'point-vs-interval'         // NEW
+  | 'ci-construction'           // NEW
+  | 'ci-interpretation'         // NEW
+  | 'ci-builder'                // NEW
+  | 'effect-size-comparison'    // NEW
+  | 'effect-size-education'     // NEW
+  | 'modern-reporting';         // NEW
+
+
+================================================================================
+PHASE 4: IMPLEMENT COMPONENTS (Week 3-4)
+================================================================================
+
+STEP 4.1: START WITH SIMPLEST COMPONENTS
+-----------------------------------------
+
+Priority order (easiest to hardest):
+
+1. MeasurementError.tsx (simple, good practice)
+2. StandardErrorExplorer.tsx (uses existing NormalDistribution)
+3. ConfidenceIntervalBuilder.tsx (straightforward logic)
+4. UncertaintyTypes.tsx (two side-by-side panels)
+5. CLTSimulation.tsx (requires histogram rendering)
+6. EffectSizeComparison.tsx (uses existing components)
+
+
+STEP 4.2: TEST EACH COMPONENT INDEPENDENTLY
+--------------------------------------------
+
+Create test file: components/__tests__/ChapterTests.tsx
+
+Test each component:
+    - Does it render?
+    - Do controls work?
+    - Does animation trigger?
+    - Is the math correct?
+    - Does it teach the concept?
+
+
+STEP 4.3: INTEGRATION TESTING
+------------------------------
+
+Test the full flow:
+    - Can you navigate through all 31 steps?
+    - Do chapter numbers progress logically?
+    - Does the story make sense?
+    - Are there gaps or jumps?
+    - Does each chapter build on previous ones?
+
+
+================================================================================
+PHASE 5: POLISH & REFINE (Week 4)
+================================================================================
+
+STEP 5.1: CONTENT REVIEW
+-------------------------
+
+Read through the entire story as if you're a student:
+    - Is any step confusing?
+    - Are there undefined terms?
+    - Do visualizations match content?
+    - Is the progression logical?
+    - Are there any "leaps" that need bridging?
+
+
+STEP 5.2: TECHNICAL REFINEMENTS
+--------------------------------
+
+Things to fix:
+    - Remove ALL "proof" language from chapter 7 content
+    - Add "Remember from Chapter X" callbacks
+    - Ensure consistency in terminology
+    - Add tooltips for technical terms
+    - Ensure mobile responsiveness
+
+
+STEP 5.3: ADD NAVIGATION HELPERS
+---------------------------------
+
+Consider adding:
+    - Chapter title shown in navigation
+    - "Jump to Chapter" menu
+    - Progress indicator showing chapters not just steps
+    - "What you'll learn" preview for each chapter
+    - "Key takeaway" summary at end of each chapter
+
+
+STEP 5.4: EDUCATIONAL ENHANCEMENTS
+-----------------------------------
+
+Consider adding:
+    - "Common mistakes" callouts
+    - "Try it yourself" exercises
+    - "Real-world example" boxes
+    - "Historical note" sidebars
+    - "Going deeper" optional content
+    - End-of-chapter quizzes
+
+
+================================================================================
+IMPLEMENTATION CHECKLIST
+================================================================================
+
+PHASE 1: Planning (1-2 days)
+    [ ] Create NEW_STORY_STRUCTURE.md
+    [ ] Create CONTENT_MAPPING.md
+    [ ] Review and approve chapter arc
+    [ ] Identify which existing components to reuse
+
+PHASE 2: New Components (Week 1-2)
+    [ ] Create MeasurementError.tsx
+    [ ] Create UncertaintyTypes.tsx
+    [ ] Create StandardErrorExplorer.tsx
+    [ ] Create CLTSimulation.tsx
+    [ ] Create ConfidenceIntervalBuilder.tsx
+    [ ] Create EffectSizeComparison.tsx
+    [ ] Test each component independently
+
+PHASE 3: Content (Week 2-3)
+    [ ] Update constants.ts with all 31 steps
+    [ ] Update types.ts with new visual types
+    [ ] Update App.tsx renderVisual function
+    [ ] Review all content for:
+        [ ] No "proof" language
+        [ ] Consistent terminology
+        [ ] Logical flow
+        [ ] Clear explanations
+
+PHASE 4: Integration (Week 3)
+    [ ] Test full navigation flow
+    [ ] Ensure all visuals render
+    [ ] Test on mobile
+    [ ] Check for broken links/references
+    [ ] Verify math is correct everywhere
+
+PHASE 5: Polish (Week 4)
+    [ ] Add navigation helpers
+    [ ] Add tooltips for terms
+    [ ] Add chapter summaries
+    [ ] Improve transitions
+    [ ] User testing with 2-3 people
+    [ ] Fix identified issues
+    [ ] Final content review
+
+LAUNCH
+    [ ] Update README with new description
+    [ ] Update any promotional materials
+    [ ] Deploy
+    [ ] Celebrate building something genuinely useful!
+
+
+================================================================================
+EXPECTED OUTCOMES
+================================================================================
+
+After implementing Option B, students will:
+
+1. Understand WHAT uncertainty is (not just how to test hypotheses)
+2. Distinguish aleatory from epistemic uncertainty
+3. Understand standard error vs standard deviation
+4. Know why the CLT matters
+5. Be able to interpret confidence intervals correctly
+6. Understand hypothesis testing as ONE tool among many
+7. Appreciate effect sizes and practical significance
+8. Have modern, best-practice understanding of statistical inference
+
+This will be a genuinely unique resource. There is NO other interactive tutorial that teaches uncertainty this way.
+
+
+================================================================================
+TIMELINE SUMMARY
+================================================================================
+
+Week 1: Create 3 new components, test them
+Week 2: Create 3 more components, update all content
+Week 3: Integration, testing, fixing
+Week 4: Polish, user testing, refinement
+
+Total: 4 weeks for a complete transformation
+
+You already have the infrastructure. You're not starting from scratch.
+You're building the foundation underneath existing work.
+
+
+================================================================================
+FINAL NOTES
+================================================================================
+
+This is ambitious but achievable. You have:
+    ✓ Working infrastructure
+    ✓ Visual design system
+    ✓ Animation framework
+    ✓ Component architecture
+    ✓ About 40% of the content already done
+
+You need:
+    ✗ 6 new components (moderate difficulty)
+    ✗ 20 new content steps (writing, not coding)
+    ✗ Integration and polish
+
+This is a 3-4 week project that will result in something genuinely valuable and unique.
+
+The alternative (Option A - just rename it) takes 1 day but leaves you with another hypothesis testing tutorial in a sea of hypothesis testing tutorials.
+
+Option B builds something the world actually needs.
+
+Go build it.
+
+
+================================================================================
+END OF IMPLEMENTATION PLAN
+================================================================================

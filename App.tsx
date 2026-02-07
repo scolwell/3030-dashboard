@@ -123,6 +123,15 @@ const App: React.FC = () => {
   ];
 
   const hypothesisTestingSubmenus: Tool[] = [
+    {
+      id: ToolType.HYPOTHESIS_TEST_STORY,
+      name: 'Story of Uncertainty',
+      icon: BookOpen,
+      desc: 'A concept-first walkthrough of why we test hypotheses and what uncertainty means in practice.',
+      url: '#',
+      version: TOOL_META[ToolType.HYPOTHESIS_TEST_STORY].version,
+      build: TOOL_META[ToolType.HYPOTHESIS_TEST_STORY].build
+    },
 {
       id: ToolType.HYPOTHESIS_TEST_TOOL,
       name: 'Hypothesis testing examples',

@@ -123,16 +123,7 @@ const App: React.FC = () => {
   ];
 
   const hypothesisTestingSubmenus: Tool[] = [
-    {
-      id: ToolType.HYPOTHESIS_TEST_STORY,
-      name: 'Story of Uncertainty',
-      icon: BookOpen,
-      desc: 'A concept-first walkthrough of why we test hypotheses and what uncertainty means in practice.',
-      url: '#',
-      version: TOOL_META[ToolType.HYPOTHESIS_TEST_STORY].version,
-      build: TOOL_META[ToolType.HYPOTHESIS_TEST_STORY].build
-    },
-    {
+{
       id: ToolType.HYPOTHESIS_TEST_TOOL,
       name: 'Hypothesis testing examples',
       icon: FlaskConical,
@@ -198,6 +189,15 @@ const App: React.FC = () => {
       version: TOOL_META[ToolType.PROBABILITY_DISTRIBUTION_HUB].version,
       build: TOOL_META[ToolType.PROBABILITY_DISTRIBUTION_HUB].build,
       children: probabilitySubmenus
+    },
+    {
+      id: ToolType.HYPOTHESIS_TEST_STORY,
+      name: 'Story of Uncertainty',
+      icon: BookOpen,
+      desc: 'A concept-first walkthrough of why we test hypotheses and what uncertainty means in practice.',
+      url: '#',
+      version: TOOL_META[ToolType.HYPOTHESIS_TEST_STORY].version,
+      build: TOOL_META[ToolType.HYPOTHESIS_TEST_STORY].build
     },
     { 
       id: ToolType.HYPOTHESIS_TESTING_HUB, 

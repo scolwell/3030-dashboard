@@ -1,0 +1,7 @@
+{
+  "name": "The Story of Uncertainty",
+  "description": "An interactive, narrative-driven exploration of the philosophy and mechanics of statistical hypothesis testing, exploring the nature of doubt and certainty.",
+  "version": "2.1.0",
+  "buildDate": "2026-02-07",
+  "requestFramePermissions": []
+}

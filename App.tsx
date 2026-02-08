@@ -69,8 +69,8 @@ const TOOL_META: Record<ToolType, { version: string; build: string }> = {
 };
 
 const App: React.FC = () => {
-  const APP_VERSION = '2.3.0';
-  const BUILD_NUMBER = '20260123.1';
+  const APP_VERSION = '3.1.0';
+  const BUILD_NUMBER = '20260208.1';
   const CACHE_BUSTER = '20260123a';
   const LOCAL_STORAGE_KEY = 'tsm-active-tool';
   const [activeToolId, setActiveToolId] = useState<ToolType>(() => {
@@ -123,6 +123,15 @@ const App: React.FC = () => {
   ];
 
   const hypothesisTestingSubmenus: Tool[] = [
+    {
+      id: ToolType.HYPOTHESIS_TEST_STORY,
+      name: 'Story of Uncertainty',
+      icon: BookOpen,
+      desc: 'A concept-first walkthrough of why we test hypotheses and what uncertainty means in practice.',
+      url: '#',
+      version: TOOL_META[ToolType.HYPOTHESIS_TEST_STORY].version,
+      build: TOOL_META[ToolType.HYPOTHESIS_TEST_STORY].build
+    },
     {
       id: ToolType.HYPOTHESIS_TEST_TOOL,
       name: 'Hypothesis testing examples',
@@ -189,15 +198,6 @@ const App: React.FC = () => {
       version: TOOL_META[ToolType.PROBABILITY_DISTRIBUTION_HUB].version,
       build: TOOL_META[ToolType.PROBABILITY_DISTRIBUTION_HUB].build,
       children: probabilitySubmenus
-    },
-    {
-      id: ToolType.HYPOTHESIS_TEST_STORY,
-      name: 'Story of Uncertainty',
-      icon: BookOpen,
-      desc: 'A concept-first walkthrough of why we test hypotheses and what uncertainty means in practice.',
-      url: '#',
-      version: TOOL_META[ToolType.HYPOTHESIS_TEST_STORY].version,
-      build: TOOL_META[ToolType.HYPOTHESIS_TEST_STORY].build
     },
     { 
       id: ToolType.HYPOTHESIS_TESTING_HUB, 
@@ -358,7 +358,7 @@ const App: React.FC = () => {
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 w-full bg-gray-50 relative overflow-auto p-6">
+        <div className={`flex-1 w-full bg-gray-50 relative overflow-auto ${activeToolId === ToolType.HYPOTHESIS_TEST_STORY ? '' : 'p-6'}`}>
           {activeToolId === ToolType.STATISTICAL_TABLES ? (
             <StatisticalTablesLookup />
           ) : activeToolId === ToolType.NORMAL_CURVE ? (

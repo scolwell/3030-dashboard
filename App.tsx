@@ -23,6 +23,8 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { ToolType } from './types';
+import { DEMOS_REGISTRY, getDemosForParent } from './demos.config';
+import DemoWrapper from './components/DemoWrapper';
 import NormalCurveTool from './components/NormalCurveTool';
 import CoinTossSimulation from './components/CoinTossSimulation';
 import HypothesisTestTool from './components/HypothesisTestTool';
@@ -38,7 +40,7 @@ import StatisticalTablesLookup from './components/StatisticalTablesLookup';
 import SamplingVisualization from './components/SamplingVisualization';
 
 interface Tool {
-  id: ToolType;
+  id: ToolType | string;  // Allow string IDs for demos (prefixed with 'demo-')
   name: string;
   icon: any;
   desc: string;
@@ -46,6 +48,8 @@ interface Tool {
   version: string;
   build: string;
   children?: Tool[];
+  isDemoFromRegistry?: boolean;  // Flag to identify registry-based demos
+  registryId?: string;  // ID in demo registry
 }
 
 const TOOL_META: Record<ToolType, { version: string; build: string }> = {
@@ -122,26 +126,34 @@ const App: React.FC = () => {
 
   ];
 
-  const hypothesisTestingSubmenus: Tool[] = [
-    {
-      id: ToolType.HYPOTHESIS_TEST_STORY,
-      name: 'Story of Uncertainty',
-      icon: BookOpen,
-      desc: 'A concept-first walkthrough of why we test hypotheses and what uncertainty means in practice.',
-      url: '#',
-      version: TOOL_META[ToolType.HYPOTHESIS_TEST_STORY].version,
-      build: TOOL_META[ToolType.HYPOTHESIS_TEST_STORY].build
-    },
-    {
-      id: ToolType.HYPOTHESIS_TEST_TOOL,
-      name: 'Hypothesis testing examples',
-      icon: FlaskConical,
-      desc: 'Step-by-step hypothesis testing with one-sample z-test and challenge mode.',
-      url: '#',
-      version: TOOL_META[ToolType.HYPOTHESIS_TEST_TOOL].version,
-      build: TOOL_META[ToolType.HYPOTHESIS_TEST_TOOL].build
-    }
-  ];
+  const hypothesisTestingSubmenus: Tool[] = (() => {
+    // Start with demos from registry
+    const demoTools = getDemosForParent(ToolType.HYPOTHESIS_TESTING_HUB).map(demo => ({
+      id: `demo-${demo.id}` as ToolType,
+      name: demo.name,
+      icon: demo.icon,
+      desc: demo.description,
+      url: demo.demoPath,
+      version: demo.version,
+      build: demo.build,
+      isDemoFromRegistry: true,
+      registryId: demo.id,
+    }));
+    
+    // Add static hypothesis testing tool
+    return [
+      ...demoTools,
+      {
+        id: ToolType.HYPOTHESIS_TEST_TOOL,
+        name: 'Hypothesis testing examples',
+        icon: FlaskConical,
+        desc: 'Step-by-step hypothesis testing with one-sample z-test and challenge mode.',
+        url: '#',
+        version: TOOL_META[ToolType.HYPOTHESIS_TEST_TOOL].version,
+        build: TOOL_META[ToolType.HYPOTHESIS_TEST_TOOL].build
+      }
+    ];
+  })();
 
   const tools: Tool[] = [
     { 
@@ -358,7 +370,7 @@ const App: React.FC = () => {
         </header>
 
         {/* Content Area */}
-        <div className={`flex-1 w-full bg-gray-50 relative overflow-auto ${activeToolId === ToolType.HYPOTHESIS_TEST_STORY ? '' : 'p-6'}`}>
+        <div className={`flex-1 w-full bg-gray-50 relative overflow-auto ${(typeof activeToolId === 'string' && activeToolId.startsWith('demo-')) || activeToolId === ToolType.HYPOTHESIS_TEST_STORY ? '' : 'p-6'}`}>
           {activeToolId === ToolType.STATISTICAL_TABLES ? (
             <StatisticalTablesLookup />
           ) : activeToolId === ToolType.NORMAL_CURVE ? (
@@ -383,6 +395,11 @@ const App: React.FC = () => {
             <HypothesisTestStory />
           ) : activeToolId === ToolType.HYPOTHESIS_TEST_TOOL ? (
             <HypothesisTestTool />
+          ) : typeof activeToolId === 'string' && activeToolId.startsWith('demo-') ? (
+            // Handle demos from registry
+            activeTool && activeTool.registryId ? (
+              <DemoWrapper demo={DEMOS_REGISTRY.find(d => d.id === activeTool.registryId)!} />
+            ) : null
           ) : (
             <iframe 
               ref={iframeRef}

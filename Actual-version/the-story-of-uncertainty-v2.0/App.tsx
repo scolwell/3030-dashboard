@@ -1,9 +1,11 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { STORY_STEPS, INITIAL_STATE } from './constants';
-import { StoryStep } from './types';
+import { StoryStep, AppState } from './types';
 import NormalDistribution from './components/NormalDistribution';
 import SampleCloud from './components/SampleCloud';
+
+const STORAGE_KEY = 'tsm-story-of-uncertainty-state';
 
 function normDist(z: number): number {
   const t = 1 / (1 + 0.2316419 * Math.abs(z));
@@ -13,7 +15,36 @@ function normDist(z: number): number {
 }
 
 const App: React.FC = () => {
-  const [state, setState] = useState(INITIAL_STATE);
+  // Load persisted state from localStorage or use initial state
+  const [state, setState] = useState<AppState>(() => {
+    if (typeof window === 'undefined') return INITIAL_STATE;
+    
+    try {
+      const persisted = localStorage.getItem(STORAGE_KEY);
+      if (persisted) {
+        const parsed = JSON.parse(persisted);
+        // Restore persisted state but reset to first step (user navigates back to this app)
+        return {
+          ...parsed,
+          currentStep: 0
+        };
+      }
+    } catch (e) {
+      console.warn('Failed to load persisted state:', e);
+    }
+    return INITIAL_STATE;
+  });
+
+  // Persist state to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        console.warn('Failed to persist state:', e);
+      }
+    }
+  }, [state]);
   
   const step = STORY_STEPS[state.currentStep];
   const stdErr = state.popStdDev / Math.sqrt(state.sampleSize);
@@ -32,6 +63,14 @@ const App: React.FC = () => {
 
   const resetStory = () => {
     setState(INITIAL_STATE);
+    // Clear persisted state when user clicks Reset
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (e) {
+        console.warn('Failed to clear persisted state:', e);
+      }
+    }
   };
 
   const backToStart = () => {
@@ -67,7 +106,7 @@ const App: React.FC = () => {
           <div className="flex flex-col items-center justify-center gap-8 h-full py-4">
             <div className="flex items-center gap-12 sm:gap-20">
               <div className="flex flex-col items-center">
-                <span className="text-sm font-bold text-slate-400 mb-2 uppercase tracking-tighter">Population \u03BC</span>
+                <span className="text-sm font-bold text-slate-400 mb-2 tracking-tighter">POPULATION μ</span>
                 <div className="w-24 h-24 bg-slate-50 rounded-3xl flex items-center justify-center text-slate-600 font-black text-3xl border-4 border-slate-200">
                   {state.popMean}
                 </div>
@@ -172,7 +211,7 @@ const App: React.FC = () => {
         );
       case 'threshold':
         return (
-          <NormalDistribution mean={state.popMean} stdDev={stdErr} alpha={state.alpha} showCriticalRegion={true} highlightAlpha={true} testType={state.testType} />
+          <NormalDistribution mean={state.popMean} stdDev={stdErr} alpha={state.alpha} sampleMean={state.sampleMean} showCriticalRegion={true} highlightAlpha={true} testType={state.testType} />
         );
       case 'conclusion':
         return (
@@ -253,11 +292,11 @@ const App: React.FC = () => {
             
             {['threshold', 'conclusion'].includes(step.visualType) && (
               <div className="mt-8 w-full animate-in slide-in-from-bottom-6 duration-500">
-                <div className="w-full flex flex-col sm:flex-row items-center gap-10 bg-slate-50/80 backdrop-blur p-8 rounded-[2.5rem] border border-slate-200 shadow-inner">
-                    <div className="flex-1 w-full">
-                      <div className="flex justify-between text-[11px] font-black text-slate-400 mb-4 uppercase tracking-[0.2em]">
-                        <span>Alpha (&alpha;) Threshold</span>
-                        <span className="text-blue-600 bg-blue-100 px-3 py-1 rounded-full">&alpha; = {state.alpha.toFixed(2)}</span>
+                <div className="w-full flex flex-col sm:flex-row items-center gap-3 bg-slate-50/80 backdrop-blur p-4 rounded-[2.5rem] border border-slate-200 shadow-inner">
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="flex flex-col text-[9px] font-black text-slate-400 tracking-[0.15em] whitespace-nowrap leading-tight">
+                        <span>ALPHA (α)</span>
+                        <span>THRESHOLD</span>
                       </div>
                       <input 
                         type="range" 
@@ -266,19 +305,20 @@ const App: React.FC = () => {
                         step="0.01" 
                         value={state.alpha} 
                         onChange={(e) => setState(prev => ({ ...prev, alpha: parseFloat(e.target.value) }))} 
-                        className="w-full h-2.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-blue-600" 
+                        className="w-32 h-2.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-blue-600" 
                       />
+                      <span className="text-xs font-black text-blue-600 bg-blue-100 px-2.5 py-1 rounded-full whitespace-nowrap">α={state.alpha.toFixed(2)}</span>
                     </div>
-                    <div className="w-full sm:w-auto flex flex-col gap-3">
-                      <div className="flex bg-white p-1.5 rounded-2xl border border-slate-200">
-                        <button onClick={() => setState(prev => ({ ...prev, testType: 'two-tailed' }))} className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${state.testType === 'two-tailed' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>Two-Tailed</button>
-                        <button onClick={() => setState(prev => ({ ...prev, testType: 'one-tailed' }))} className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${state.testType === 'one-tailed' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>One-Tailed</button>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <div className="flex bg-white p-1 rounded-xl border border-slate-200">
+                        <button onClick={() => setState(prev => ({ ...prev, testType: 'two-tailed' }))} className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${state.testType === 'two-tailed' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>Two-Tailed</button>
+                        <button onClick={() => setState(prev => ({ ...prev, testType: 'one-tailed' }))} className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${state.testType === 'one-tailed' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}>One-Tailed</button>
                       </div>
                     </div>
                     {step.visualType === 'conclusion' && (
-                      <div className="w-full sm:w-48 text-center border-t sm:border-t-0 sm:border-l border-slate-200 pt-6 sm:pt-0 sm:pl-10">
-                          <div className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">P-Value</div>
-                          <div className={`text-4xl font-black tabular-nums ${pValue < state.alpha ? 'text-green-500' : 'text-amber-500'}`}>{pValue.toFixed(3)}</div>
+                      <div className="flex items-center gap-2 text-center border-t sm:border-t-0 sm:border-l border-slate-200 pt-3 sm:pt-0 sm:pl-4 flex-shrink-0">
+                          <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em]">P-VALUE</div>
+                          <div className={`text-2xl font-black tabular-nums ${pValue < state.alpha ? 'text-green-500' : 'text-amber-500'}`}>{pValue.toFixed(3)}</div>
                       </div>
                     )}
                 </div>

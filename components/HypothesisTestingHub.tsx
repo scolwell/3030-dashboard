@@ -60,7 +60,7 @@ const HypothesisTestingHub: React.FC<HypothesisTestingHubProps> = ({ onNavigate 
               className="bg-white rounded-2xl shadow-md border border-slate-200 p-6 hover:shadow-lg transition-shadow"
             >
               <div className="mb-4">
-                <h3 className="text-xl font-bold text-slate-800 mb-2">{demo.title}</h3>
+                <h3 className="text-xl font-normal text-slate-800 mb-2">{demo.title}</h3>
                 <p className="text-sm text-slate-600 leading-relaxed">{demo.description}</p>
               </div>
 

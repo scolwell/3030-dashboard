@@ -21,7 +21,7 @@ export const STORY_STEPS: StoryStep[] = [
   {
     id: 2,
     chapterNumber: 3,
-    title: "How Wide is Wide?",
+    title: "How Far is Too Far?",
     content: "Variation is the signature of uncertainty. The wider the spread, the less certain we are about any single observation.",
     details: "Standard deviation measures typical deviation from the mean. It quantifies how noisy a process is.",
     visualType: 'distribution'
@@ -31,7 +31,7 @@ export const STORY_STEPS: StoryStep[] = [
     chapterNumber: 4,
     title: "Shrinking Doubt",
     content: "The mean is more stable than individual observations. Its uncertainty shrinks with more data.",
-    details: "Standard error is $\\sigma/\\sqrt{n}$. Bigger samples narrow uncertainty about the mean without eliminating it.",
+    details: "Standard error is σ/√n. Bigger samples narrow uncertainty about the mean without eliminating it.",
     visualType: 'sample-on-dist'
   },
   {

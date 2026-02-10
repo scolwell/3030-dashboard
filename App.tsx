@@ -67,7 +67,7 @@ const TOOL_META: Record<ToolType, { version: string; build: string }> = {
   [ToolType.BUILD_A_NORMAL]: { version: '1.0.0', build: '20260123.1' },
   [ToolType.Z_PERCENTILE_TRANSLATOR]: { version: '1.0.0', build: '20260123.1' },
   [ToolType.PROBABILITY_STATEMENT_BUILDER]: { version: '1.0.0', build: '20260123.1' },
-  [ToolType.HYPOTHESIS_TEST_STORY]: { version: '2.1.0', build: '20260207.1' },
+  [ToolType.HYPOTHESIS_TEST_STORY]: { version: '2.1.0', build: '20260208.1' },
   [ToolType.HYPOTHESIS_TEST_TOOL]: { version: '3.0.0', build: '20260123.1' },
   [ToolType.STATISTICAL_TABLES]: { version: '1.0.0', build: '20260123.1' }
 };
@@ -145,7 +145,7 @@ const App: React.FC = () => {
       ...demoTools,
       {
         id: ToolType.HYPOTHESIS_TEST_TOOL,
-        name: 'Hypothesis testing examples',
+        name: 'Hypothesis Testing Examples',
         icon: FlaskConical,
         desc: 'Step-by-step hypothesis testing with one-sample z-test and challenge mode.',
         url: '#',

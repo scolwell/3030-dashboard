@@ -38,6 +38,11 @@ const NormalDistribution: React.FC<Props> = ({
   const zAlpha = useMemo(() => Math.abs(getZScore(alphaInTail)), [alphaInTail]);
   const xRange = [mean - 4 * stdDev, mean + 4 * stdDev];
   
+  // For one-tailed tests, determine direction based on sample mean
+  const isRightTail = sampleMean !== undefined ? sampleMean >= mean : true;
+  const showLeftTail = isTwoTailed || !isRightTail;
+  const showRightTail = isTwoTailed || isRightTail;
+  
   const xScale = useMemo(() => 
     d3.scaleLinear().domain(xRange).range([margin.left, width - margin.right]),
     [mean, stdDev]
@@ -73,6 +78,14 @@ const NormalDistribution: React.FC<Props> = ({
 
   const criticalXLeft = mean - zAlpha * stdDev;
   const criticalXRight = mean + zAlpha * stdDev;
+  const criticalLabelOffset = 28;
+  const badgeWidth = 120;
+  const badgeHeight = 50;
+  const badgeY = height * 0.22;
+  const arrowInsetPx = 6;
+  const xPerPx = (xRange[1] - xRange[0]) / (width - margin.left - margin.right);
+  const leftArrowX = criticalXLeft - arrowInsetPx * xPerPx;
+  const rightArrowX = criticalXRight + arrowInsetPx * xPerPx;
 
   const leftTailData = lineData.filter(d => d.x <= criticalXLeft);
   const rightTailData = lineData.filter(d => d.x >= criticalXRight);
@@ -129,46 +142,77 @@ const NormalDistribution: React.FC<Props> = ({
 
         {showCriticalRegion && (
           <g className="animate-in fade-in duration-500">
-            {isTwoTailed && (
+            {showLeftTail && (
               <path d={areaGenerator(leftTailData) || ""} fill="#fee2e2" fillOpacity="0.8" stroke="#ef4444" strokeWidth="1" />
             )}
-            <path d={areaGenerator(rightTailData) || ""} fill="#fee2e2" fillOpacity="0.8" stroke="#ef4444" strokeWidth="1" />
-            
-            {isTwoTailed && (
-              <text x={xScale(criticalXLeft)} y={yScale(pdf(criticalXLeft)) - 15} textAnchor="middle" fontSize="10" fontWeight="bold" fill="#ef4444">
-                -{zAlpha.toFixed(2)}
-              </text>
+            {showRightTail && (
+              <path d={areaGenerator(rightTailData) || ""} fill="#fee2e2" fillOpacity="0.8" stroke="#ef4444" strokeWidth="1" />
             )}
-            <text x={xScale(criticalXRight)} y={yScale(pdf(criticalXRight)) - 15} textAnchor="middle" fontSize="10" fontWeight="bold" fill="#ef4444">
-              +{zAlpha.toFixed(2)}
-            </text>
+            
+            {showLeftTail && (
+              <>
+                <text x={xScale(criticalXLeft) - criticalLabelOffset} y={yScale(pdf(criticalXLeft)) - 55} textAnchor="middle" fontSize="14" fontWeight="bold" fill="#ef4444">
+                  -{zAlpha.toFixed(2)}
+                </text>
+                <line
+                  x1={xScale(criticalXLeft) - criticalLabelOffset}
+                  y1={yScale(pdf(criticalXLeft)) - 50}
+                  x2={xScale(leftArrowX)}
+                  y2={yScale(pdf(leftArrowX))}
+                  stroke="#ef4444"
+                  strokeWidth="1.5"
+                  markerEnd="url(#arrowhead-red-right)"
+                />
+              </>
+            )}
+            {showRightTail && (
+              <>
+                <text x={xScale(criticalXRight) + criticalLabelOffset} y={yScale(pdf(criticalXRight)) - 55} textAnchor="middle" fontSize="14" fontWeight="bold" fill="#ef4444">
+                  +{zAlpha.toFixed(2)}
+                </text>
+                <line
+                  x1={xScale(criticalXRight) + criticalLabelOffset}
+                  y1={yScale(pdf(criticalXRight)) - 50}
+                  x2={xScale(rightArrowX)}
+                  y2={yScale(pdf(rightArrowX))}
+                  stroke="#ef4444"
+                  strokeWidth="1.5"
+                  markerEnd="url(#arrowhead-red-right)"
+                />
+              </>
+            )}
+            
 
             <g transform={`translate(0, ${height - margin.bottom + 100})`}>
-               {isTwoTailed && (
+               {showLeftTail && (
                  <g>
                     <line x1={xScale(criticalXLeft) - 5} y1="0" x2={xScale(xRange[0]) + 10} y2="0" stroke="#ef4444" strokeWidth="2" markerStart="url(#arrowhead-red-left)" markerEnd="url(#arrowhead-red-right)" />
                     <text x={(xScale(criticalXLeft) - 5 + xScale(xRange[0]) + 10) / 2} y="-20" textAnchor="middle" fontSize="9" fontWeight="900" fill="#ef4444" className="uppercase tracking-[0.1em]">Reject H₀</text>
-                    <text x={(xScale(criticalXLeft) + xScale(xRange[0])) / 2} y="-35" textAnchor="middle" fontSize="8" fontWeight="800" fill="#ef4444">α/2</text>
+                    {isTwoTailed && <text x={(xScale(criticalXLeft) + xScale(xRange[0])) / 2} y="-35" textAnchor="middle" fontSize="8" fontWeight="800" fill="#ef4444">α/2</text>}
+                    {!isTwoTailed && <text x={(xScale(criticalXLeft) + xScale(xRange[0])) / 2} y="-35" textAnchor="middle" fontSize="8" fontWeight="800" fill="#ef4444">α</text>}
+                 </g>
+               )}
+               {showRightTail && (
+                 <g>
+                    <line x1={xScale(criticalXRight) + 5} y1="0" x2={xScale(xRange[1]) - 10} y2="0" stroke="#ef4444" strokeWidth="2" markerStart="url(#arrowhead-red-left)" markerEnd="url(#arrowhead-red-right)" />
+                    <text x={(xScale(criticalXRight) + 5 + xScale(xRange[1]) - 10) / 2} y="-20" textAnchor="middle" fontSize="9" fontWeight="900" fill="#ef4444" className="uppercase tracking-[0.1em]">Reject H₀</text>
+                    {isTwoTailed && <text x={(xScale(criticalXRight) + xScale(xRange[1])) / 2} y="-35" textAnchor="middle" fontSize="8" fontWeight="800" fill="#ef4444">α/2</text>}
+                    {!isTwoTailed && <text x={(xScale(criticalXRight) + xScale(xRange[1])) / 2} y="-35" textAnchor="middle" fontSize="8" fontWeight="800" fill="#ef4444">α</text>}
                  </g>
                )}
                <g>
-                  <line x1={xScale(criticalXRight) + 5} y1="0" x2={xScale(xRange[1]) - 10} y2="0" stroke="#ef4444" strokeWidth="2" markerStart="url(#arrowhead-red-left)" markerEnd="url(#arrowhead-red-right)" />
-                  <text x={(xScale(criticalXRight) + 5 + xScale(xRange[1]) - 10) / 2} y="-20" textAnchor="middle" fontSize="9" fontWeight="900" fill="#ef4444" className="uppercase tracking-[0.1em]">Reject H₀</text>
-                  {isTwoTailed && <text x={(xScale(criticalXRight) + xScale(xRange[1])) / 2} y="-35" textAnchor="middle" fontSize="8" fontWeight="800" fill="#ef4444">α/2</text>}
-               </g>
-               <g>
                   <line 
-                    x1={isTwoTailed ? xScale(criticalXLeft) + 5 : xScale(xRange[0]) + 20}
+                    x1={showLeftTail ? xScale(criticalXLeft) + 5 : xScale(xRange[0]) + 20}
                     y1="0" 
-                    x2={xScale(criticalXRight) - 5} 
+                    x2={showRightTail ? xScale(criticalXRight) - 5 : xScale(xRange[1]) - 20} 
                     y2="0" 
                     stroke="#94a3b8" 
                     strokeWidth="2" 
-                    markerStart={isTwoTailed ? "url(#arrowhead-slate-left)" : ""}
-                    markerEnd="url(#arrowhead-slate-right)" 
+                    markerStart={showLeftTail ? "url(#arrowhead-slate-left)" : ""}
+                    markerEnd={showRightTail ? "url(#arrowhead-slate-right)" : ""} 
                   />
                   <text 
-                    x={isTwoTailed ? (xScale(criticalXLeft) + xScale(criticalXRight)) / 2 : (xScale(xRange[0]) + xScale(criticalXRight)) / 2}
+                    x={showLeftTail && showRightTail ? (xScale(criticalXLeft) + xScale(criticalXRight)) / 2 : showLeftTail ? (xScale(criticalXLeft) + xScale(xRange[1])) / 2 : (xScale(xRange[0]) + xScale(criticalXRight)) / 2}
                     y="-20" 
                     textAnchor="middle" 
                     fontSize="9" 
@@ -209,22 +253,37 @@ const NormalDistribution: React.FC<Props> = ({
 
         {sampleMean !== undefined && !showCentralRegion && (
           <g className="animate-in fade-in slide-in-from-bottom-2 duration-700">
+            {(() => {
+              const sampleX = xScale(sampleMean);
+              const minX = margin.left;
+              const maxX = width - margin.right - badgeWidth;
+              const badgeX = Math.max(minX, Math.min(maxX, sampleX - badgeWidth / 2));
+              return (
+                <>
             <line 
               x1={xScale(sampleMean)} 
               y1={yScale(0)} 
               x2={xScale(sampleMean)} 
-              y2={yScale(pdf(sampleMean)) - 10} 
+              y2={badgeY + badgeHeight} 
               stroke="#2563eb" 
               strokeWidth="3" 
               strokeDasharray="6 4" 
             />
             <circle cx={xScale(sampleMean)} cy={yScale(0)} r="6" fill="#2563eb" />
-            <foreignObject x={xScale(sampleMean) - 60} y={yScale(pdf(sampleMean)) - 65} width="120" height="50">
+            <foreignObject
+              x={badgeX}
+              y={badgeY}
+              width={badgeWidth}
+              height={badgeHeight}
+            >
               <div className="bg-slate-900 text-white rounded-2xl px-3 py-2 text-center shadow-xl border border-slate-700">
                 <p className="text-[8px] font-black uppercase tracking-widest text-blue-400 mb-0.5">Sample Mean</p>
                 <p className="text-sm font-black tabular-nums leading-none">x̄ = {sampleMean.toFixed(1)}</p>
               </div>
             </foreignObject>
+                </>
+              );
+            })()}
           </g>
         )}
       </svg>

@@ -37,8 +37,8 @@ export const DEMOS_REGISTRY: DemoConfig[] = [
     parentToolId: ToolType.HYPOTHESIS_TESTING_HUB,
     parentToolName: 'Hypothesis Testing',
     demoPath: '/demos/story-of-uncertainty',
-    version: '2.1.0',
-    build: '20260208.1',
+    version: '2.2.0',
+    build: '20260210.1',
     enabled: true
   },
   // Template for next demo:

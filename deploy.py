@@ -6,7 +6,7 @@ import sys
 def upload_files():
     ftp = ftplib.FTP('82.197.80.194')
     try:
-        ftp.login('u367490946.thestatisticalmind.com', 'Sc2024!')
+        ftp.login('u367490946.thestatisticalmind.com', '1@Consult1123')
         print("✓ Connected to FTP server")
         
         ftp.cwd('/public_html/3030-dashboard')
@@ -18,9 +18,9 @@ def upload_files():
         
         # Upload new bundle
         ftp.cwd('/public_html/3030-dashboard/assets')
-        with open('dist/assets/index-BiNH2IBU.js', 'rb') as f:
-            ftp.storbinary('STOR index-BiNH2IBU.js', f)
-        print("✓ Uploaded index-BiNH2IBU.js")
+        with open('dist/assets/index-OEziLmGG.js', 'rb') as f:
+            ftp.storbinary('STOR index-OEziLmGG.js', f)
+        print("✓ Uploaded index-OEziLmGG.js")
         
         print("\n✅ Deployment complete!")
         ftp.quit()
@@ -30,5 +30,5 @@ def upload_files():
         sys.exit(1)
 
 if __name__ == '__main__':
-    os.chdir('/Users/scott/Documents/_Apps-TBC/apps-tbc/3030_app/the-statistical-mind---mcs_3030-dashboard')
+    os.chdir('/Users/scott/Documents/_Apps/_Apps-TBC/apps-tbc/3030_app/the-statistical-mind---mcs_3030-dashboard')
     upload_files()

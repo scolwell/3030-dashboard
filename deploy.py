@@ -3,30 +3,6 @@ import ftplib
 import os
 import sys
 
-def upload_file(ftp, local_path, remote_path):
-    """Upload a single file"""
-    with open(local_path, 'rb') as f:
-        ftp.storbinary(f'STOR {remote_path}', f)
-
-def upload_directory(ftp, local_dir, remote_dir):
-    """Recursively upload a directory"""
-    # Create remote directory if it doesn't exist
-    try:
-        ftp.mkd(remote_dir)
-    except:
-        pass  # Directory might already exist
-    
-    for item in os.listdir(local_dir):
-        local_path = os.path.join(local_dir, item)
-        remote_path = f"{remote_dir}/{item}"
-        
-        if os.path.isfile(local_path):
-            upload_file(ftp, local_path, item)
-        elif os.path.isdir(local_path):
-            ftp.cwd(remote_dir)
-            upload_directory(ftp, local_path, item)
-            ftp.cwd('..')
-
 def upload_files():
     ftp = ftplib.FTP('82.197.80.194')
     try:
@@ -40,7 +16,7 @@ def upload_files():
             ftp.storbinary('STOR index.html', f)
         print("✓ Uploaded index.html")
         
-        # Upload new main bundle
+        # Upload main bundle
         ftp.cwd('/public_html/3030-dashboard/assets')
         with open('dist/assets/index-OEziLmGG.js', 'rb') as f:
             ftp.storbinary('STOR index-OEziLmGG.js', f)
@@ -48,9 +24,34 @@ def upload_files():
         
         # Upload Story of Uncertainty demo
         ftp.cwd('/public_html/3030-dashboard')
-        print("Uploading Story of Uncertainty demo...")
-        upload_directory(ftp, 'dist/demos/story-of-uncertainty', 'demos/story-of-uncertainty')
-        print("✓ Uploaded Story of Uncertainty")
+        
+        # Create demos/story-of-uncertainty directory if it doesn't exist
+        try:
+            ftp.mkd('demos')
+        except:
+            pass
+        
+        try:
+            ftp.mkd('demos/story-of-uncertainty')
+        except:
+            pass
+        
+        try:
+            ftp.mkd('demos/story-of-uncertainty/assets')
+        except:
+            pass
+        
+        # Upload Story index.html
+        ftp.cwd('/public_html/3030-dashboard/demos/story-of-uncertainty')
+        with open('dist/demos/story-of-uncertainty/index.html', 'rb') as f:
+            ftp.storbinary('STOR index.html', f)
+        print("✓ Uploaded Story index.html")
+        
+        # Upload Story assets
+        ftp.cwd('/public_html/3030-dashboard/demos/story-of-uncertainty/assets')
+        with open('dist/demos/story-of-uncertainty/assets/index-BasLjhT8.js', 'rb') as f:
+            ftp.storbinary('STOR index-BasLjhT8.js', f)
+        print("✓ Uploaded Story asset bundle")
         
         print("\n✅ Deployment complete!")
         ftp.quit()

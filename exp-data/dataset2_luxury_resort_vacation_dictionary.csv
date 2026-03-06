@@ -1,0 +1,5 @@
+VariableName,Description,Values/Scale
+ParticipantID,Unique participant identifier,1–180
+ResortStyle,Type of resort.,Party; Relaxation; Adventure
+TravelCompanion,Who the participant traveled with.,Friends; Partner
+SatisfactionScore,Overall satisfaction with the resort vacation.,0–100 rating/score (approx.)

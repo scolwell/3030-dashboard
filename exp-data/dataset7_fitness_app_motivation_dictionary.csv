@@ -1,0 +1,5 @@
+VariableName,Description,Values/Scale
+ParticipantID,Unique participant identifier,1–120
+CoachType,Type of coach in the app.,AICoach; HumanTrainer
+SocialMode,Social mode of app use.,Solo; Community
+MotivationScore,Motivation to use the fitness app.,0–100 rating/score (approx.)

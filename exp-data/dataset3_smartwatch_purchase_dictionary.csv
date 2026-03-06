@@ -1,0 +1,6 @@
+VariableName,Description,Values/Scale
+ParticipantID,Unique participant identifier,1–240
+FeatureFocus,Main focus of smartwatch features.,Fitness; Productivity
+BatteryLife,Battery life description.,Short; Long
+Price,Price level of smartwatch.,Low; High
+PurchaseIntention,Likelihood of purchasing the smartwatch.,0–100 rating/score (approx.)

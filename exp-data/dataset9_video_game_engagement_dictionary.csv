@@ -1,0 +1,6 @@
+VariableName,Description,Values/Scale
+ParticipantID,Unique participant identifier,1–240
+GameType,Type of game.,Competitive; Story
+Multiplayer,Multiplayer mode.,Solo; Online
+Difficulty,Game difficulty.,Easy; Hard
+EnjoymentScore,Enjoyment while playing the video game.,0–100 rating/score (approx.)

@@ -1,0 +1,5 @@
+VariableName,Description,Values/Scale
+ParticipantID,Unique participant identifier,1–180
+MusicLevel,Level of music in the shop.,None; Background; Loud
+Seating,Type of seating.,Couch; Desk
+StudyPerformance,Study performance rating in the coffee shop.,0–100 rating/score (approx.)

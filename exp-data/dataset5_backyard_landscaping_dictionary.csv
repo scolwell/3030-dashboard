@@ -1,0 +1,5 @@
+VariableName,Description,Values/Scale
+ParticipantID,Unique participant identifier,1–180
+YardStyle,Style of the yard.,Modern; Natural; Minimalist
+MaintenanceLevel,Required maintenance level.,Low; High
+PreferenceRating,Preference for the proposed backyard design.,0–100 rating/score (approx.)

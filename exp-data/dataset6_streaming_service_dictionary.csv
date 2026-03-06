@@ -1,0 +1,6 @@
+VariableName,Description,Values/Scale
+ParticipantID,Unique participant identifier,1–240
+ContentType,Type of primary content.,Movies; Series
+Ads,Whether the plan has ads.,Yes; No
+Cost,Subscription cost level.,Cheap; Expensive
+SubscriptionLikelihood,Likelihood of subscribing to the streaming service.,0–100 rating/score (approx.)

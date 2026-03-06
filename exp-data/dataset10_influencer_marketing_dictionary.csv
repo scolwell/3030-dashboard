@@ -1,0 +1,5 @@
+VariableName,Description,Values/Scale
+ParticipantID,Unique participant identifier,1–120
+InfluencerType,Type of influencer.,Celebrity; MicroInfluencer
+ProductType,Type of product.,Luxury; Everyday
+PurchaseIntention,Purchase intention after seeing the influencer post.,0–100 rating/score (approx.)

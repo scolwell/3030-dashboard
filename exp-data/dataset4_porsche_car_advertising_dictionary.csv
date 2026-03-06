@@ -1,0 +1,5 @@
+VariableName,Description,Values/Scale
+ParticipantID,Unique participant identifier,1–120
+AdStyle,Primary style of the advertisement.,Performance; Luxury
+BuyerType,Type of potential buyer.,Student; Professional
+PurchaseIntention,Intent to purchase the Porsche after viewing the ad.,0–100 rating/score (approx.)

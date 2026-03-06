@@ -1,0 +1,5 @@
+VariableName,Description,Values/Scale
+ParticipantID,Unique participant identifier,1–120
+TrainingType,Type of training completed.,Cardio; Strength
+DrinkType,Type of drink consumed.,Energy; Hydration
+PerformanceScore,Sports performance score after training session.,0–100 rating/score (approx.)

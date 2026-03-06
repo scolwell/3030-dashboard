@@ -38,6 +38,10 @@ import ProbabilityStatementBuilder from './components/demos/ProbabilityStatement
 import ConfidenceFunnelChart from './components/ConfidenceFunnelChart';
 import StatisticalTablesLookup from './components/StatisticalTablesLookup';
 import SamplingVisualization from './components/SamplingVisualization';
+import TwoGroupTool from './components/TwoGroupTool';
+import SingleGroupTool from './components/SingleGroupTool';
+import SplitPlotTool from './components/SplitPlotTool';
+import FactorialDesignTool from './components/FactorialDesignTool';
 
 interface Tool {
   id: ToolType | string;  // Allow string IDs for demos (prefixed with 'demo-')
@@ -63,6 +67,11 @@ const TOOL_META: Record<ToolType, { version: string; build: string }> = {
   [ToolType.CONFIDENCE_FUNNEL_CHART]: { version: '1.0.0', build: '20260123.1' },
   [ToolType.PROBABILITY_DISTRIBUTION_HUB]: { version: '1.0.0', build: '20260123.1' },
   [ToolType.HYPOTHESIS_TESTING_HUB]: { version: '1.0.0', build: '20260123.1' },
+  [ToolType.EXPERIMENTAL_DESIGN_HUB]: { version: '1.0.0', build: '20260226.1' },
+  [ToolType.TWO_GROUP_DESIGNS]: { version: '1.0.0', build: '20260226.1' },
+  [ToolType.SINGLE_GROUP_DESIGNS]: { version: '1.0.0', build: '20260306.1' },
+  [ToolType.SPLIT_PLOT_DESIGNS]: { version: '1.0.0', build: '20260226.1' },
+  [ToolType.FACTORIAL_DESIGNS]: { version: '1.0.0', build: '20260226.1' },
   [ToolType.LAW_OF_LARGE_NUMBERS]: { version: '1.0.0', build: '20260123.1' },
   [ToolType.BUILD_A_NORMAL]: { version: '1.0.0', build: '20260123.1' },
   [ToolType.Z_PERCENTILE_TRANSLATOR]: { version: '1.0.0', build: '20260123.1' },
@@ -71,6 +80,17 @@ const TOOL_META: Record<ToolType, { version: string; build: string }> = {
   [ToolType.HYPOTHESIS_TEST_TOOL]: { version: '3.0.0', build: '20260123.1' },
   [ToolType.STATISTICAL_TABLES]: { version: '1.0.0', build: '20260123.1' }
 };
+
+function ComingSoonPanel({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <div className="max-w-3xl mx-auto">
+      <div className="bg-white border border-gray-200 rounded-3xl p-6">
+        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+        <p className="text-sm text-gray-600 mt-2">{subtitle || 'Content coming soon.'}</p>
+      </div>
+    </div>
+  )
+}
 
 const App: React.FC = () => {
   const APP_VERSION = '3.2.0';
@@ -155,6 +175,45 @@ const App: React.FC = () => {
     ];
   })();
 
+  const experimentalDesignSubmenus: Tool[] = [
+    {
+      id: ToolType.SINGLE_GROUP_DESIGNS,
+      name: 'single group designs',
+      icon: BarChart2,
+      desc: 'Within-subject designs including paired samples and single-sample t-tests.',
+      url: '#',
+      version: TOOL_META[ToolType.SINGLE_GROUP_DESIGNS].version,
+      build: TOOL_META[ToolType.SINGLE_GROUP_DESIGNS].build,
+    },
+    {
+      id: ToolType.TWO_GROUP_DESIGNS,
+      name: 'two group designs',
+      icon: BarChart2,
+      desc: 'Between-groups independent samples designs with two conditions.',
+      url: '#',
+      version: TOOL_META[ToolType.TWO_GROUP_DESIGNS].version,
+      build: TOOL_META[ToolType.TWO_GROUP_DESIGNS].build,
+    },
+    {
+      id: ToolType.SPLIT_PLOT_DESIGNS,
+      name: 'split plot designs (mixed)',
+      icon: BarChart3,
+      desc: 'Mixed designs that combine between- and within-subject factors.',
+      url: '#',
+      version: TOOL_META[ToolType.SPLIT_PLOT_DESIGNS].version,
+      build: TOOL_META[ToolType.SPLIT_PLOT_DESIGNS].build,
+    },
+    {
+      id: ToolType.FACTORIAL_DESIGNS,
+      name: 'factorial design',
+      icon: BarChart3,
+      desc: 'Multi-factor designs, main effects, and interactions.',
+      url: '#',
+      version: TOOL_META[ToolType.FACTORIAL_DESIGNS].version,
+      build: TOOL_META[ToolType.FACTORIAL_DESIGNS].build,
+    },
+  ]
+
   const tools: Tool[] = [
     { 
       id: ToolType.SAMPLE_SIZE, 
@@ -220,6 +279,16 @@ const App: React.FC = () => {
       version: TOOL_META[ToolType.HYPOTHESIS_TESTING_HUB].version,
       build: TOOL_META[ToolType.HYPOTHESIS_TESTING_HUB].build,
       children: hypothesisTestingSubmenus
+    },
+    {
+      id: ToolType.EXPERIMENTAL_DESIGN_HUB,
+      name: 'Experimental Design',
+      icon: BookOpen,
+      desc: 'Design frameworks used to plan experiments and compare conditions.',
+      url: '#',
+      version: TOOL_META[ToolType.EXPERIMENTAL_DESIGN_HUB].version,
+      build: TOOL_META[ToolType.EXPERIMENTAL_DESIGN_HUB].build,
+      children: experimentalDesignSubmenus,
     },
   ];
 
@@ -381,6 +450,14 @@ const App: React.FC = () => {
             <SamplingVisualization />
           ) : activeToolId === ToolType.CONFIDENCE_FUNNEL_CHART ? (
             <ConfidenceFunnelChart />
+          ) : activeToolId === ToolType.SINGLE_GROUP_DESIGNS ? (
+            <SingleGroupTool />
+          ) : activeToolId === ToolType.TWO_GROUP_DESIGNS ? (
+            <TwoGroupTool />
+          ) : activeToolId === ToolType.SPLIT_PLOT_DESIGNS ? (
+            <SplitPlotTool />
+          ) : activeToolId === ToolType.FACTORIAL_DESIGNS ? (
+            <FactorialDesignTool />
           ) : activeToolId === ToolType.PROBABILITY_DISTRIBUTION_HUB ? (
             <ProbabilityDistributionHub onNavigate={setActiveToolId} />
           ) : activeToolId === ToolType.HYPOTHESIS_TESTING_HUB ? (

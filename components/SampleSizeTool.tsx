@@ -13,9 +13,10 @@ const SampleSizeTool: React.FC = () => {
   }, [alpha, power, effectSize]);
 
   const getEffectSizeLabel = (d: number) => {
-    if (d < 0.2) return { label: 'Negligible', color: 'text-slate-400' };
-    if (d < 0.5) return { label: 'Small', color: 'text-blue-500' };
-    if (d < 0.8) return { label: 'Medium', color: 'text-indigo-600' };
+    if (d < 0.2) return { label: 'Very Small', color: 'text-slate-400' };
+    if (d < 0.4) return { label: 'Small', color: 'text-blue-500' };
+    if (d < 0.6) return { label: 'Small-Medium', color: 'text-amber-600' };
+    if (d < 0.8) return { label: 'Medium-Large', color: 'text-indigo-600' };
     return { label: 'Large', color: 'text-emerald-600' };
   };
 
@@ -70,7 +71,7 @@ const SampleSizeTool: React.FC = () => {
               />
               <div className="flex justify-between text-[10px] text-slate-400 font-bold uppercase">
                 <span>Small (0.2)</span>
-                <span>Med (0.5)</span>
+                <span>Sm-Med (0.4)</span>
                 <span>Large (0.8+)</span>
               </div>
             </div>

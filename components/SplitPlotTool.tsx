@@ -441,10 +441,11 @@ const EXAMPLE_DATASETS: ExampleConfig[] = [
 
 const etaBenchmark = (eta2p: number): { label: string; color: string } => {
   if (!Number.isFinite(eta2p) || eta2p < 0) return { label: '', color: '#94a3b8' };
-  if (eta2p >= 0.14) return { label: 'Large', color: '#16a34a' };
-  if (eta2p >= 0.06) return { label: 'Medium', color: '#d97706' };
-  if (eta2p >= 0.01) return { label: 'Small', color: '#64748b' };
-  return { label: 'Trivial', color: '#cbd5e1' };
+  if (eta2p >= 0.80) return { label: 'Large', color: '#16a34a' };
+  if (eta2p >= 0.60) return { label: 'Med-Large', color: '#0891b2' };
+  if (eta2p >= 0.40) return { label: 'Sm-Medium', color: '#d97706' };
+  if (eta2p >= 0.20) return { label: 'Small', color: '#64748b' };
+  return { label: 'Very Small', color: '#cbd5e1' };
 };
 
 const computeMarginalMeans = (
@@ -1059,8 +1060,8 @@ const SplitPlotTool: React.FC = () => {
                         <td className="px-4 py-1.5 text-right text-xs tabular-nums text-slate-600">
                           <span className="inline-flex items-center gap-1">
                             {pair.d.toFixed(2)}
-                            <span className="text-[7px] font-bold uppercase tracking-wide" style={{ color: etaBenchmark(Math.abs(pair.d) >= 0.8 ? 0.14 : Math.abs(pair.d) >= 0.5 ? 0.06 : Math.abs(pair.d) >= 0.2 ? 0.01 : 0).color }}>
-                              {Math.abs(pair.d) >= 0.8 ? 'Large' : Math.abs(pair.d) >= 0.5 ? 'Medium' : Math.abs(pair.d) >= 0.2 ? 'Small' : 'Trivial'}
+                            <span className="text-[7px] font-bold uppercase tracking-wide" style={{ color: Math.abs(pair.d) >= 0.80 ? '#16a34a' : Math.abs(pair.d) >= 0.60 ? '#0891b2' : Math.abs(pair.d) >= 0.40 ? '#d97706' : Math.abs(pair.d) >= 0.20 ? '#64748b' : '#cbd5e1' }}>
+                              {Math.abs(pair.d) >= 0.80 ? 'Large' : Math.abs(pair.d) >= 0.60 ? 'Med-Large' : Math.abs(pair.d) >= 0.40 ? 'Sm-Medium' : Math.abs(pair.d) >= 0.20 ? 'Small' : 'Very Small'}
                             </span>
                           </span>
                         </td>
@@ -1109,8 +1110,8 @@ const SplitPlotTool: React.FC = () => {
                         <td className="px-4 py-1.5 text-right text-xs tabular-nums text-slate-600">
                           <span className="inline-flex items-center gap-1">
                             {pair.d.toFixed(2)}
-                            <span className="text-[7px] font-bold uppercase tracking-wide" style={{ color: etaBenchmark(Math.abs(pair.d) >= 0.8 ? 0.14 : Math.abs(pair.d) >= 0.5 ? 0.06 : Math.abs(pair.d) >= 0.2 ? 0.01 : 0).color }}>
-                              {Math.abs(pair.d) >= 0.8 ? 'Large' : Math.abs(pair.d) >= 0.5 ? 'Medium' : Math.abs(pair.d) >= 0.2 ? 'Small' : 'Trivial'}
+                            <span className="text-[7px] font-bold uppercase tracking-wide" style={{ color: Math.abs(pair.d) >= 0.80 ? '#16a34a' : Math.abs(pair.d) >= 0.60 ? '#0891b2' : Math.abs(pair.d) >= 0.40 ? '#d97706' : Math.abs(pair.d) >= 0.20 ? '#64748b' : '#cbd5e1' }}>
+                              {Math.abs(pair.d) >= 0.80 ? 'Large' : Math.abs(pair.d) >= 0.60 ? 'Med-Large' : Math.abs(pair.d) >= 0.40 ? 'Sm-Medium' : Math.abs(pair.d) >= 0.20 ? 'Small' : 'Very Small'}
                             </span>
                           </span>
                         </td>

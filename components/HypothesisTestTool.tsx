@@ -614,7 +614,7 @@ const HypothesisTestTool: React.FC = () => {
                     </div>
                     <div className="bg-blue-50/30 border border-blue-100 rounded-md p-3">
                       <div className="text-xs text-gray-600">
-                        <strong>Effect Size (Cohen's d):</strong> {effectSize.toFixed(3)} {Math.abs(effectSize) < 0.2 ? '(small)' : Math.abs(effectSize) < 0.5 ? '(small-medium)' : Math.abs(effectSize) < 0.8 ? '(medium-large)' : '(large)'}
+                        <strong>Effect Size (Cohen's d):</strong> {effectSize.toFixed(3)} {Math.abs(effectSize) < 0.2 ? '(very small)' : Math.abs(effectSize) < 0.4 ? '(small)' : Math.abs(effectSize) < 0.6 ? '(small-medium)' : Math.abs(effectSize) < 0.8 ? '(medium-large)' : '(large)'}
                       </div>
                     </div>
                   </div>

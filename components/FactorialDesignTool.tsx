@@ -864,13 +864,14 @@ const FactorialDesignTool: React.FC = () => {
     return computeTwoWayAnovaFromCellMeans(cellMeans, rows, cols, assumedNPerCell);
   }, [cellMeans, config]);
 
-  // Cohen's effect size benchmarks for partial eta squared
+  // Effect size benchmarks for partial eta squared
   const etaBenchmark = (eta2p: number): { label: string; color: string } => {
     if (!Number.isFinite(eta2p) || eta2p < 0) return { label: '', color: '#94a3b8' };
-    if (eta2p >= 0.14) return { label: 'Large', color: '#16a34a' };
-    if (eta2p >= 0.06) return { label: 'Medium', color: '#d97706' };
-    if (eta2p >= 0.01) return { label: 'Small', color: '#64748b' };
-    return { label: 'Trivial', color: '#cbd5e1' };
+    if (eta2p >= 0.80) return { label: 'Large', color: '#16a34a' };
+    if (eta2p >= 0.60) return { label: 'Med-Large', color: '#0891b2' };
+    if (eta2p >= 0.40) return { label: 'Sm-Medium', color: '#d97706' };
+    if (eta2p >= 0.20) return { label: 'Small', color: '#64748b' };
+    return { label: 'Very Small', color: '#cbd5e1' };
   };
 
   const render2DTable = (
